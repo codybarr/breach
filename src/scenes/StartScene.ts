@@ -49,7 +49,7 @@ GAME END
   When ROOT ACCESS runs out or any 3 supply piles empty.
   Ties break on remaining integrity.`;
 
-const VOLUME_ROW = 4;
+const VOLUME_ROW = 5;
 
 export class StartScene implements SceneLike {
   root = new THREE.Group();
@@ -75,7 +75,7 @@ export class StartScene implements SceneLike {
   private indexButtons: Button[] = [];
   private rulesBack!: Button;
 
-  constructor(private stage: Stage, private opts: { difficulty: Difficulty; onStart: (d: Difficulty) => void }) {
+  constructor(private stage: Stage, private opts: { difficulty: Difficulty; onStart: (d: Difficulty) => void; onLan: () => void }) {
     stage.bg.setIntensity(1);
     this.diffIdx = Math.max(0, DIFFICULTIES.findIndex((d) => d.id === opts.difficulty));
     this.root.add(this.menu, this.index, this.rules);
@@ -113,6 +113,7 @@ export class StartScene implements SceneLike {
     const items: [string, () => void][] = [
       ['JACK IN', () => this.startGame()],
       ['', () => this.cycleDifficulty(1)],
+      ['LAN MATCH', () => this.opts.onLan()],
       ['CARD INDEX', () => this.setMode('index')],
       ['PROTOCOL', () => this.setMode('rules')],
       ['', () => this.stepVolume(sfx.volume >= 100 ? -100 : 10)],
@@ -153,7 +154,7 @@ export class StartScene implements SceneLike {
   // ───────────────────────── menu ─────────────────────────
 
   private baseLabel(j: number) {
-    return ['JACK IN', `DIFFICULTY: ${DIFFICULTIES[this.diffIdx].name}`, 'CARD INDEX', 'PROTOCOL', `VOLUME: ${sfx.volume}`][j];
+    return ['JACK IN', `DIFFICULTY: ${DIFFICULTIES[this.diffIdx].name}`, 'LAN MATCH', 'CARD INDEX', 'PROTOCOL', `VOLUME: ${sfx.volume}`][j];
   }
 
   private setFocus(i: number, sound = true) {

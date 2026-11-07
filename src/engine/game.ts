@@ -253,6 +253,13 @@ export class Game {
     this.startTurn(1 - p);
   }
 
+  /** Player `p` leaves the match (abort or dropped link); the other player wins. */
+  forfeit(p: number, reason: string) {
+    if (this.over) return;
+    this.runner = null;
+    this.finish(1 - p, reason);
+  }
+
   answer(a: number[] | string | null): boolean {
     const pr = this.pending;
     if (!pr) return false;
