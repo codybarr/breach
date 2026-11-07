@@ -5,23 +5,27 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && tsc --noEmit -p server && vite build",
+    "build": "tsc --noEmit && tsc --noEmit -p server && tsc --noEmit -p worker && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p server",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p server && tsc --noEmit -p worker",
     "dev:lan": "vite --host",
     "server": "bun server/main.ts",
-    "serve": "vite build && bun server/main.ts"
+    "serve": "vite build && bun server/main.ts",
+    "cf:dev": "vite build && wrangler dev",
+    "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261107.1",
     "@types/bun": "^1.4.4",
     "@types/three": "^0.187.0",
     "playwright": "^1.65.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "wrangler": "^4.158.0"
   }
 }

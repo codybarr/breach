@@ -7,7 +7,7 @@ Play: [https://breach.codybarr.dev](https://breach.codybarr.dev)
 ## Tech
 
 - TypeScript, Three.js, Vite
-- Bun HTTP/WebSocket server
+- Bun HTTP/WebSocket server (LAN), Cloudflare Workers + Durable Objects (hosted)
 - Vitest, Playwright
 
 ## Setup & run
@@ -29,3 +29,14 @@ bun run dev
 ```
 
 Open http://localhost:5173.
+
+## Deploy to Cloudflare
+
+The game runs on Cloudflare Workers. Static assets serve `dist/`, and a Durable Object (`worker/index.ts`) runs the multiplayer lobby, the same `Lobby` the Bun server uses.
+
+```sh
+bunx wrangler login     # once
+bun run deploy          # typecheck, build, and deploy
+```
+
+To try the Workers build locally, run `bun run cf:dev`. To serve it on a custom domain, uncomment the `routes` entry in `wrangler.jsonc`.
