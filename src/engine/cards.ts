@@ -2,6 +2,9 @@ import type { Ctx } from './game';
 
 export type CardKind = 'currency' | 'data' | 'malware' | 'program';
 
+/** Procedural 3D dot-matrix models available as card art (drawn in render/dotModels). */
+export type DotModel = 'cpu' | 'honeypot';
+
 export interface CardDef {
   id: string;
   name: string;
@@ -19,6 +22,8 @@ export interface CardDef {
   art: string[];
   /** If set, art is a drawn network graph with this many nodes instead of ASCII. */
   network?: number;
+  /** If set, art is this 3D dot-matrix model instead of ASCII. */
+  model?: DotModel;
   /** +cycles granted; used by the AI to tell terminals from non-terminals. */
   givesCycles?: number;
   effect?: (ctx: Ctx) => Generator<import('./game').Prompt, void, any>;
@@ -81,7 +86,7 @@ const defs: CardDef[] = [
   {
     id: 'overclock', name: 'Overclock', cost: 4, kind: 'program',
     text: '+3 Cards', flavor: 'thermal limits are a suggestion.',
-    art: ['  ^^^  ', ' [CPU] ', ' ||||| ', ' ~~~~~ '],
+    art: ['  ^^^  ', ' [CPU] ', ' ||||| ', ' ~~~~~ '], model: 'cpu',
     *effect(c) { c.draw(3); },
   },
   {
@@ -262,7 +267,7 @@ const defs: CardDef[] = [
     id: 'honeypot', name: 'Honeypot', cost: 4, kind: 'program', daemon: true,
     text: '+2 CR\nDaemon: while in hand,\nblocks Exploits and\nBreaches attacker 2.',
     flavor: 'come on in. it is warm.',
-    art: ['  ___  ', ' (___) ', ' |HNY| ', ' |___| '],
+    art: ['  ___  ', ' (___) ', ' |HNY| ', ' |___| '], model: 'honeypot',
     *effect(c) { c.credits(2); },
   },
   {
