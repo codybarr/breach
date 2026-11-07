@@ -1,0 +1,340 @@
+<title>BREACH.EXE Sound Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap">
+<style>
+/* Layout: one terminal window — knob strip on top, event × direction matrix below, picks readout at the foot. Matches the game's phosphor palette. */
+:root {
+  color-scheme: dark;
+  --bg: #04110c; --panel: #082018; --line: #1f5a3d; --dim: #3fa070;
+  --fg: #33ff88; --hi: #e8fff2; --amber: #ffc933; --red: #ff3366; --cyan: #33e0ff;
+  --display: "VT323", ui-monospace, monospace;
+  --mono: "Share Tech Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font: 15px/1.45 var(--mono);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px }
+h1 { font: 44px/1 var(--display); margin: 0; color: var(--hi); letter-spacing: .02em; text-wrap: balance }
+h1 span { color: var(--fg) }
+p { margin: 0; max-width: 72ch; color: var(--dim) }
+p b { color: var(--fg); font-weight: normal }
+.knobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 20px; padding: 14px 16px; border: 1px solid var(--line); background: var(--panel) }
+.knob { display: grid; gap: 4px; min-width: 0 }
+.knob label { display: flex; justify-content: space-between; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim) }
+.knob output { color: var(--hi); font-variant-numeric: tabular-nums }
+input[type=range] { width: 100%; accent-color: var(--fg) }
+.scroll { overflow-x: auto; border: 1px solid var(--line) }
+table { border-collapse: collapse; width: 100%; min-width: 860px }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: middle }
+thead th { font-weight: normal; vertical-align: top; padding-block: 10px; background: var(--panel); border-bottom: 1px solid var(--line) }
+thead th .nm { font: 26px/1 var(--display); color: var(--hi); display: block }
+thead th .bl { font-size: 11.5px; color: var(--dim); display: block; margin-top: 4px; line-height: 1.35 }
+thead th.ref .nm { color: var(--dim) }
+tbody th { font-weight: normal; color: var(--hi); white-space: nowrap; font-size: 14px }
+tbody th small { display: block; color: var(--dim); font-size: 11px }
+.cell { display: flex; gap: 6px; align-items: center }
+button { font: inherit; color: var(--fg); background: transparent; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; border-radius: 0 }
+button:hover { border-color: var(--fg); background: #0d2e22 }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px }
+button.play.on { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.pick { appearance: none; width: 16px; height: 16px; border: 1px solid var(--line); margin: 0; cursor: pointer; flex: none }
+.pick:checked { background: var(--amber); border-color: var(--amber) }
+.pick:hover { border-color: var(--amber) }
+tr.all td, tr.all th { background: var(--panel) }
+.foot { display: grid; gap: 10px }
+.foot h2 { font: 28px/1 var(--display); margin: 0; color: var(--hi) }
+pre { margin: 0; padding: 12px 14px; border: 1px solid var(--line); background: var(--panel); color: var(--amber); white-space: pre-wrap; word-break: break-word; font: 13px/1.5 var(--mono) }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center }
+.status { color: var(--dim); font-size: 12px }
+.key { color: var(--amber) }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <h1>BREACH.EXE <span>// sound lab</span></h1>
+    <p>Each column is a sound direction, each row a game event. Press <b>▶</b> to hear one, or <b>▶ demo</b> to hear a typical turn. Tick the <span class="key">■</span> box in a row to choose which direction that event should use; the selection and knob settings appear at the bottom for you to paste back. <b>CURRENT</b> is what ships today.</p>
+  </header>
+
+  <section class="knobs" aria-label="Global adjustments">
+    <div class="knob"><label for="k-pitch">Pitch <output id="o-pitch">0 st</output></label><input id="k-pitch" type="range" min="-12" max="12" step="1" value="0"></div>
+    <div class="knob"><label for="k-len">Length <output id="o-len">1.00×</output></label><input id="k-len" type="range" min="0.5" max="1.6" step="0.05" value="1"></div>
+    <div class="knob"><label for="k-echo">Echo <output id="o-echo">1.00×</output></label><input id="k-echo" type="range" min="0" max="2" step="0.05" value="1"></div>
+    <div class="knob"><label for="k-crush">Bitcrush <output id="o-crush">+0.00</output></label><input id="k-crush" type="range" min="-1" max="1" step="0.05" value="0"></div>
+    <div class="knob"><label for="k-bright">Brightness <output id="o-bright">1.00×</output></label><input id="k-bright" type="range" min="0.25" max="2" step="0.05" value="1"></div>
+    <div class="knob"><label for="k-vol">Volume <output id="o-vol">70%</output></label><input id="k-vol" type="range" min="0" max="1" step="0.05" value="0.7"></div>
+  </section>
+
+  <div class="scroll"><table id="grid"></table></div>
+
+  <section class="foot">
+    <h2>Your picks</h2>
+    <pre id="out"></pre>
+    <div class="row"><button id="copy" type="button">Copy picks</button><button id="reset" type="button">Reset knobs</button><span class="status" id="status"></span></div>
+  </section>
+</div>
+
+<script>
+// ---------- engine ----------
+let ctx = null, B = {};
+const K = { pitch: 0, len: 1, echo: 1, crush: 0, bright: 1, vol: 0.7 };
+let rng = Math.random;
+function seed(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function ensure() {
+  if (!ctx) {
+    ctx = new AudioContext();
+    const c = ctx;
+    B.in = c.createGain();
+    B.dry = c.createGain(); B.wetC = c.createGain(); B.crush = c.createWaveShaper();
+    B.sum = c.createGain();
+    B.hp = c.createBiquadFilter(); B.hp.type = 'highpass';
+    B.lp = c.createBiquadFilter(); B.lp.type = 'lowpass'; B.lp.Q.value = 0.7;
+    B.master = c.createGain();
+    B.lim = c.createDynamicsCompressor();
+    Object.assign(B.lim, {}); B.lim.threshold.value = -1; B.lim.knee.value = 0; B.lim.ratio.value = 20; B.lim.attack.value = 0.002; B.lim.release.value = 0.1;
+    B.delay = c.createDelay(1); B.fb = c.createGain(); B.fbLp = c.createBiquadFilter(); B.fbLp.type = 'lowpass'; B.wet = c.createGain();
+    B.in.connect(B.dry).connect(B.sum);
+    B.in.connect(B.crush).connect(B.wetC).connect(B.sum);
+    B.sum.connect(B.hp).connect(B.lp).connect(B.master).connect(B.lim).connect(c.destination);
+    B.lp.connect(B.delay); B.delay.connect(B.fbLp).connect(B.fb).connect(B.delay); B.delay.connect(B.wet).connect(B.master);
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+}
+function crushCurve(bits) {
+  const n = 2048, cur = new Float32Array(n), steps = Math.pow(2, bits) / 2;
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cur[i] = Math.round(x * steps) / steps; }
+  return cur;
+}
+function setBus(bus) {
+  const t = ctx.currentTime;
+  const crush = Math.max(0, Math.min(1, (bus.crush || 0) + K.crush));
+  B.crush.curve = crushCurve(Math.round(10 - crush * 7));
+  B.dry.gain.setValueAtTime(1 - crush, t); B.wetC.gain.setValueAtTime(crush, t);
+  B.hp.frequency.setValueAtTime(bus.hp || 20, t);
+  B.lp.frequency.setValueAtTime(Math.min(18000, (bus.lp || 12000) * K.bright), t);
+  const e = bus.echo || { t: 0.05, fb: 0, wet: 0 };
+  B.delay.delayTime.setValueAtTime(e.t, t);
+  B.fb.gain.setValueAtTime(Math.min(0.9, e.fb * Math.min(K.echo, 1.5)), t);
+  B.fbLp.frequency.setValueAtTime(e.fbLp || 3000, t);
+  B.wet.gain.setValueAtTime(e.wet * K.echo, t);
+  B.master.gain.setValueAtTime(K.vol * (bus.trim || 1), t);
+}
+
+// osc voice. env: 'exp' (percussive) | 'gate' (on/off beep) | 'soft' (old 12ms attack)
+function osc(f, dur, o = {}) {
+  const { type = 'square', vol = 0.3, at = 0, to = null, fm = null, env = 'exp', detune = 0 } = o;
+  const P = Math.pow(2, K.pitch / 12), L = K.len;
+  const t = ctx.currentTime + 0.02 + at * L, d = dur * L;
+  const g = ctx.createGain();
+  if (env === 'gate') {
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.001);
+    g.gain.setValueAtTime(vol, Math.max(t + 0.001, t + d - 0.003)); g.gain.linearRampToValueAtTime(0, t + d);
+  } else {
+    const a = env === 'soft' ? Math.min(0.012, d * 0.3) : 0.0015;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  }
+  g.connect(B.in);
+  for (const cents of detune ? [0, detune] : [0]) {
+    const os = ctx.createOscillator(); os.type = type; os.detune.value = cents;
+    os.frequency.setValueAtTime(f * P, t);
+    if (to) os.frequency.exponentialRampToValueAtTime(Math.max(20, to * P), t + d);
+    if (fm) {
+      const m = ctx.createOscillator(), mg = ctx.createGain();
+      m.frequency.setValueAtTime(f * P * fm.r, t);
+      if (to) m.frequency.exponentialRampToValueAtTime(Math.max(1, to * P * fm.r), t + d);
+      mg.gain.value = f * P * fm.i; m.connect(mg).connect(os.frequency); m.start(t); m.stop(t + d + 0.02);
+    }
+    os.connect(g); os.start(t); os.stop(t + d + 0.02);
+  }
+}
+// noise burst. hold = sample-and-hold length (digital grit); filters optional
+function nz(dur, o = {}) {
+  const { vol = 0.3, at = 0, hold = 1, hp, lp, bp, q = 1, flat = false } = o;
+  const L = K.len, d = dur * L, t = ctx.currentTime + 0.02 + at * L;
+  const len = Math.max(1, Math.floor(ctx.sampleRate * d));
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate), ch = buf.getChannelData(0);
+  let v = 0; for (let i = 0; i < len; i++) { if (i % hold === 0) v = rng() * 2 - 1; ch[i] = v * (flat ? 1 : 1 - i / len); }
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  let node = src;
+  const add = (type, f, Q) => { const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; if (Q) fl.Q.value = Q; node.connect(fl); node = fl; };
+  if (hp) add('highpass', hp); if (lp) add('lowpass', lp); if (bp) add('bandpass', bp, q);
+  const g = ctx.createGain(); g.gain.value = vol; node.connect(g).connect(B.in); src.start(t);
+}
+const seq = (fs, step, dur, o = {}) => fs.forEach((f, i) => osc(f, dur, { ...o, at: (o.at || 0) + i * step }));
+const chatter = (n, step, lo, hi, o = {}) => { for (let i = 0; i < n; i++) osc(lo + rng() * (hi - lo), step * 0.75, { env: 'gate', ...o, at: (o.at || 0) + i * step }); };
+
+// ---------- directions ----------
+const S = { type: 'square', env: 'gate', vol: 0.26 };
+const F = { type: 'sine', fm: { r: 2, i: 1.5 }, vol: 0.45 };
+const G = { type: 'sawtooth', env: 'gate', vol: 0.28 };
+const Gs = { ...G, type: 'square' };
+const H = { type: 'sine', vol: 0.5 };
+const T = { type: 'triangle', vol: 0.5 };
+
+const DIRS = [
+  { id: 'current', name: 'CURRENT', ref: true, blurb: 'What ships today. Muffled, 210 ms echo with long feedback.',
+    bus: { hp: 20, lp: 1400, echo: { t: 0.21, fb: 0.35, wet: 0.28, fbLp: 700 }, trim: 1 },
+    ev: {
+      hover: () => osc(330, 0.04, { type: 'sine', vol: 1, env: 'soft' }),
+      click: () => { osc(165, 0.09, { type: 'triangle', vol: 1, env: 'soft' }); osc(110, 0.12, { type: 'sine', vol: 1, at: 0.03, env: 'soft' }); },
+      play: () => { osc(98, 0.2, { type: 'sawtooth', vol: 1, to: 147, detune: 9, env: 'soft' }); nz(0.08, { vol: 1, lp: 300 }); },
+      coin: () => { osc(330, 0.1, { type: 'triangle', vol: 1, env: 'soft' }); osc(392, 0.18, { type: 'triangle', vol: 1, at: 0.08, env: 'soft' }); },
+      draw: () => { osc(520, 0.03, { type: 'sine', vol: 1, env: 'soft' }); nz(0.03, { vol: 1, lp: 900 }); },
+      shuffle: () => { for (let i = 0; i < 6; i++) osc(140 + i * 18, 0.05, { type: 'triangle', vol: 1, at: i * 0.035, env: 'soft' }); },
+      breach: () => { nz(0.5, { vol: 1, lp: 250 }); osc(70, 0.6, { type: 'sawtooth', vol: 1, to: 35, detune: 14, env: 'soft' }); osc(41, 0.8, { type: 'sine', vol: 1, env: 'soft' }); },
+      heal: () => [220, 262, 330].forEach((f, i) => osc(f, 0.35, { type: 'sine', vol: 1, at: i * 0.09, env: 'soft' })),
+      block: () => { osc(110, 0.2, { type: 'triangle', vol: 1, detune: 12, env: 'soft' }); osc(73, 0.3, { type: 'sine', vol: 1, at: 0.08, env: 'soft' }); },
+      turn: () => { osc(196, 0.12, { type: 'triangle', vol: 1, env: 'soft' }); osc(147, 0.2, { type: 'triangle', vol: 1, at: 0.1, env: 'soft' }); },
+      trash: () => osc(150, 0.35, { type: 'sawtooth', vol: 1, to: 40, detune: 10, env: 'soft' }),
+      boot: () => { osc(55, 1.0, { type: 'sine', vol: 1, env: 'soft' }); for (let i = 0; i < 8; i++) osc(80 + rng() * 320, 0.05, { type: 'triangle', vol: 1, at: 0.1 + i * 0.06, env: 'soft' }); },
+      win: () => [220, 262, 330, 494].forEach((f, i) => osc(f, 0.45, { type: 'triangle', vol: 1, at: i * 0.15, detune: 7, env: 'soft' })),
+      lose: () => { [196, 185, 165, 131].forEach((f, i) => osc(f, 0.5, { type: 'sawtooth', vol: 1, at: i * 0.2, detune: 15, env: 'soft' })); osc(49, 1.2, { type: 'sine', vol: 1, at: 0.6, env: 'soft' }); },
+    } },
+
+  { id: 'terminal', name: 'TERMINAL', blurb: 'PC-speaker square beeps. Hard on/off, bone dry, mid-high pitch. Mainframe console.',
+    bus: { hp: 120, lp: 7000, echo: { t: 0.03, fb: 0, wet: 0 }, trim: 1 },
+    ev: {
+      hover: () => osc(2000, 0.008, { ...S, vol: 0.12 }),
+      click: () => { osc(1400, 0.018, S); osc(700, 0.025, { ...S, at: 0.022 }); },
+      play: () => { osc(523, 0.035, S); osc(1047, 0.05, { ...S, at: 0.04 }); },
+      coin: () => { osc(1319, 0.04, S); osc(1760, 0.08, { ...S, at: 0.045 }); },
+      draw: () => { nz(0.012, { hold: 3, hp: 2500, vol: 0.35 }); osc(2400, 0.006, { ...S, vol: 0.12 }); },
+      shuffle: () => chatter(8, 0.02, 600, 1800, S),
+      breach: () => { osc(880, 0.32, { ...S, to: 110, vol: 0.3 }); osc(55, 0.35, { ...S, vol: 0.2 }); nz(0.25, { hold: 16, lp: 4000, vol: 0.3 }); },
+      heal: () => seq([523, 659, 784, 1047], 0.045, 0.04, S),
+      block: () => { osc(196, 0.09, { ...S, vol: 0.3 }); osc(196, 0.09, { ...S, vol: 0.3, at: 0.11 }); },
+      turn: () => { osc(880, 0.06, S); osc(1175, 0.08, { ...S, at: 0.08 }); },
+      trash: () => { osc(440, 0.2, { ...S, to: 80 }); nz(0.15, { hold: 24, lp: 2000, vol: 0.25, at: 0.03 }); },
+      boot: () => { osc(1000, 0.16, { ...S, vol: 0.3 }); chatter(18, 0.028, 300, 2600, { ...S, at: 0.3, vol: 0.15 }); },
+      win: () => { seq([523, 659, 784, 1047, 784, 1047, 1319], 0.06, 0.05, S); osc(2093, 0.22, { ...S, at: 0.45 }); },
+      lose: () => { seq([392, 370, 349], 0.18, 0.16, S); osc(330, 0.5, { ...S, at: 0.56, to: 110 }); },
+    } },
+
+  { id: 'datastream', name: 'DATASTREAM', blurb: 'Modem chirps, FM blips and band-passed data noise. Fast and busy, 45 ms slapback.',
+    bus: { hp: 150, lp: 9000, echo: { t: 0.045, fb: 0.12, wet: 0.18 }, trim: 1 },
+    ev: {
+      hover: () => osc(1600, 0.018, { ...F, vol: 0.22 }),
+      click: () => osc(2400, 0.03, { ...F, to: 900 }),
+      play: () => { chatter(4, 0.014, 900, 3200, { type: 'square', vol: 0.12 }); osc(400, 0.07, { ...F, to: 1600, at: 0.05 }); },
+      coin: () => seq([1568, 2093, 3136], 0.028, 0.035, { ...F, fm: { r: 3, i: 1 } }),
+      draw: () => { osc(3000, 0.02, { ...F, to: 1400, vol: 0.25 }); nz(0.02, { bp: 5000, q: 2, vol: 0.3 }); },
+      shuffle: () => chatter(16, 0.011, 500, 4200, { type: 'square', vol: 0.1 }),
+      breach: () => { nz(0.4, { bp: 1800, q: 3, hold: 2, vol: 0.6 }); osc(2600, 0.4, { type: 'sine', fm: { r: 1.48, i: 6 }, to: 200, vol: 0.4 }); chatter(10, 0.02, 1000, 3000, { type: 'square', vol: 0.1, at: 0.05 }); },
+      heal: () => { osc(300, 0.16, { ...F, to: 1800 }); seq([1319, 1760], 0.04, 0.05, { ...F, at: 0.16 }); },
+      block: () => osc(260, 0.14, { type: 'sine', fm: { r: 3.5, i: 5 }, vol: 0.5 }),
+      turn: () => { osc(900, 0.05, { ...F, to: 1800 }); osc(1800, 0.06, { ...F, to: 900, at: 0.07 }); },
+      trash: () => { osc(1800, 0.22, { type: 'sine', fm: { r: 0.5, i: 4 }, to: 120, vol: 0.45 }); nz(0.1, { bp: 1200, hold: 3, vol: 0.25 }); },
+      boot: () => { osc(2100, 0.18, { type: 'sine', vol: 0.3 }); osc(1300, 0.12, { type: 'sine', vol: 0.3, at: 0.2 }); nz(0.35, { bp: 2200, q: 1.5, hold: 2, at: 0.34, vol: 0.4 }); chatter(12, 0.016, 800, 3600, { type: 'square', vol: 0.1, at: 0.7 }); },
+      win: () => { seq([1047, 1175, 1319, 1568, 1760, 2093, 2349, 2637, 3136, 3520], 0.025, 0.03, F); osc(2000, 0.12, { ...F, to: 4000, at: 0.26 }); },
+      lose: () => { osc(1400, 0.7, { type: 'sine', fm: { r: 1.01, i: 3 }, to: 60, vol: 0.45 }); nz(0.5, { bp: 1500, hold: 4, vol: 0.25, at: 0.1 }); },
+    } },
+
+  { id: 'glitch', name: 'GLITCH', blurb: 'Bitcrushed saw and square with stutters and sample-and-hold noise. Low-mid, gritty, cyberpunk.',
+    bus: { hp: 90, lp: 6000, echo: { t: 0.06, fb: 0.1, wet: 0.12 }, crush: 0.65, trim: 1 },
+    ev: {
+      hover: () => nz(0.006, { hold: 40, vol: 0.3 }),
+      click: () => { osc(330, 0.016, Gs); nz(0.01, { hold: 30, vol: 0.25, at: 0.016 }); },
+      play: () => { seq([220, 220, 440], 0.025, 0.018, G); osc(110, 0.09, { ...G, to: 440, at: 0.075 }); },
+      coin: () => seq([660, 990, 990], 0.03, 0.025, Gs),
+      draw: () => { nz(0.018, { hold: 50, vol: 0.35 }); osc(1200, 0.008, { ...Gs, vol: 0.15 }); },
+      shuffle: () => chatter(10, 0.018, 150, 900, G),
+      breach: () => { osc(400, 0.4, { ...G, to: 40, vol: 0.4 }); nz(0.35, { hold: 80, vol: 0.35 }); seq([80, 80, 80, 80], 0.05, 0.03, { ...Gs, vol: 0.35, at: 0.05 }); },
+      heal: () => seq([330, 495, 660, 990], 0.04, 0.035, Gs),
+      block: () => { osc(98, 0.1, { ...Gs, vol: 0.4 }); nz(0.06, { hold: 60, vol: 0.3 }); osc(98, 0.05, { ...Gs, vol: 0.3, at: 0.12 }); },
+      turn: () => seq([440, 440, 660], 0.035, 0.025, Gs),
+      trash: () => { osc(700, 0.18, { ...G, to: 60 }); nz(0.18, { hold: 120, vol: 0.3 }); },
+      boot: () => { nz(0.12, { hold: 200, vol: 0.3, flat: true }); chatter(14, 0.025, 80, 1200, { ...G, at: 0.12 }); osc(55, 0.4, { ...Gs, at: 0.5, to: 110 }); },
+      win: () => { seq([330, 440, 660, 880, 1320], 0.05, 0.04, Gs); seq([1320, 1320, 1320], 0.04, 0.03, { ...Gs, at: 0.3 }); },
+      lose: () => { seq([440, 330, 220, 110], 0.11, 0.09, G); nz(0.4, { hold: 150, vol: 0.3, at: 0.45 }); osc(110, 0.4, { ...G, to: 30, at: 0.45 }); },
+    } },
+
+  { id: 'hud', name: 'HUD', blurb: 'Clean sine and triangle blips, high and polished. Sci-fi interface, short 75 ms room.',
+    bus: { hp: 200, lp: 12000, echo: { t: 0.075, fb: 0.18, wet: 0.15 }, trim: 1 },
+    ev: {
+      hover: () => osc(2800, 0.012, { ...H, vol: 0.15 }),
+      click: () => { osc(1800, 0.025, H); osc(2700, 0.03, { ...H, at: 0.02, vol: 0.3 }); },
+      play: () => { osc(600, 0.06, { ...T, to: 1200 }); osc(1800, 0.04, { ...H, at: 0.05, vol: 0.25 }); },
+      coin: () => { osc(2093, 0.05, H); osc(3136, 0.12, { ...H, at: 0.05, vol: 0.35 }); },
+      draw: () => osc(3500, 0.015, { ...H, to: 2200, vol: 0.2 }),
+      shuffle: () => seq([1200, 1500, 1800, 2100, 2400, 2700], 0.02, 0.02, { ...H, vol: 0.25 }),
+      breach: () => { osc(1200, 0.35, { ...T, to: 150 }); osc(150, 0.3, { type: 'square', vol: 0.15, at: 0.05 }); nz(0.2, { bp: 3000, vol: 0.2 }); },
+      heal: () => seq([880, 1109, 1319, 1760], 0.05, 0.08, { ...H, vol: 0.35 }),
+      block: () => { osc(440, 0.1, { ...T, fm: { r: 2.7, i: 2 } }); osc(330, 0.12, { ...T, at: 0.05 }); },
+      turn: () => { osc(1320, 0.06, H); osc(1760, 0.09, { ...H, at: 0.07 }); },
+      trash: () => osc(1400, 0.2, { ...T, to: 200 }),
+      boot: () => { osc(220, 0.5, { type: 'sine', to: 880, vol: 0.35 }); seq([1760, 2349, 2637], 0.06, 0.06, { ...H, at: 0.45, vol: 0.3 }); },
+      win: () => seq([880, 1109, 1319, 1760, 2217, 2637], 0.07, 0.12, { ...H, vol: 0.35 }),
+      lose: () => { seq([880, 740, 587, 440], 0.15, 0.18, T); osc(440, 0.5, { ...T, to: 110, at: 0.6, vol: 0.35 }); },
+    } },
+];
+
+const EVENTS = [
+  ['hover', 'pointer over button/card'], ['click', 'UI button press'], ['play', 'card played'], ['coin', 'buy / credits'],
+  ['draw', 'card drawn'], ['shuffle', 'deck reshuffled'], ['breach', 'damage dealt'], ['heal', 'integrity restored'],
+  ['block', 'damage blocked'], ['turn', 'turn passes'], ['trash', 'card trashed'], ['boot', 'game start'],
+  ['win', 'victory'], ['lose', 'defeat'],
+];
+const DEMO = [['boot', 0], ['draw', 1.4], ['draw', 1.5], ['draw', 1.6], ['draw', 1.7], ['draw', 1.8], ['hover', 2.3], ['hover', 2.5], ['click', 2.7],
+  ['play', 2.75], ['coin', 3.3], ['hover', 3.7], ['play', 3.9], ['breach', 4.2], ['block', 5.0], ['heal', 5.6], ['trash', 6.2], ['shuffle', 6.8], ['turn', 7.4]];
+
+let timers = [];
+function stopDemo() { timers.forEach(clearTimeout); timers = []; }
+function fire(dir, ev) { ensure(); setBus(dir.bus); rng = seed(ev.length * 7919 + 13); dir.ev[ev](); }
+function demo(dir) { ensure(); stopDemo(); DEMO.forEach(([ev, t]) => timers.push(setTimeout(() => fire(dir, ev), t * 1000))); }
+
+// ---------- UI ----------
+const picks = {};
+function render() {
+  const g = document.getElementById('grid');
+  let h = '<thead><tr><th scope="col"><span class="bl">event</span></th>';
+  for (const d of DIRS) h += `<th scope="col" class="${d.ref ? 'ref' : ''}"><span class="nm">${d.name}</span><span class="bl">${d.blurb}</span></th>`;
+  h += '</tr></thead><tbody><tr class="all"><th scope="row">demo turn<small>boot, draws, plays, hit…</small></th>';
+  for (const d of DIRS) h += `<td><div class="cell"><button type="button" class="play" data-demo="${d.id}" id="demo-${d.id}">▶ demo</button><input class="pick" type="radio" name="pick-all" value="${d.id}" id="pick-all-${d.id}" aria-label="Use ${d.name} for every event"></div></td>`;
+  h += '</tr>';
+  for (const [ev, desc] of EVENTS) {
+    h += `<tr><th scope="row">${ev}<small>${desc}</small></th>`;
+    for (const d of DIRS) h += `<td><div class="cell"><button type="button" class="play" data-d="${d.id}" data-e="${ev}" id="b-${d.id}-${ev}" aria-label="Play ${d.name} ${ev}">▶</button><input class="pick" type="radio" name="pick-${ev}" value="${d.id}" id="pick-${ev}-${d.id}" aria-label="Use ${d.name} for ${ev}"></div></td>`;
+    h += '</tr>';
+  }
+  g.innerHTML = h + '</tbody>';
+  g.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const dir = DIRS.find(d => d.id === (b.dataset.d || b.dataset.demo));
+    if (b.dataset.demo) demo(dir); else fire(dir, b.dataset.e);
+    b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 140);
+  });
+  g.addEventListener('change', e => {
+    const r = e.target; if (!r.classList.contains('pick')) return;
+    if (r.name === 'pick-all') { for (const [ev] of EVENTS) { picks[ev] = r.value; document.getElementById(`pick-${ev}-${r.value}`).checked = true; } }
+    else picks[r.name.slice(5)] = r.value;
+    showOut();
+  });
+}
+const fmt = { pitch: v => `${v > 0 ? '+' : ''}${v} st`, len: v => `${(+v).toFixed(2)}×`, echo: v => `${(+v).toFixed(2)}×`, crush: v => `${v >= 0 ? '+' : ''}${(+v).toFixed(2)}`, bright: v => `${(+v).toFixed(2)}×`, vol: v => `${Math.round(v * 100)}%` };
+function showOut() {
+  const byDir = {};
+  for (const [ev] of EVENTS) if (picks[ev]) (byDir[picks[ev]] ||= []).push(ev);
+  const lines = Object.keys(byDir).length ? Object.entries(byDir).map(([d, evs]) => `${d.toUpperCase()}: ${evs.join(', ')}`) : ['(nothing ticked yet)'];
+  const unpicked = EVENTS.map(e => e[0]).filter(e => !picks[e]);
+  if (unpicked.length && unpicked.length < EVENTS.length) lines.push(`unpicked: ${unpicked.join(', ')}`);
+  const kn = Object.entries(K).filter(([k, v]) => k !== 'vol' && v !== (k === 'pitch' || k === 'crush' ? 0 : 1)).map(([k, v]) => `${k} ${fmt[k](v)}`);
+  lines.push(`knobs: ${kn.length ? kn.join(', ') : 'defaults'}`);
+  document.getElementById('out').textContent = lines.join('\n');
+}
+for (const k of Object.keys(K)) {
+  const el = document.getElementById('k-' + k);
+  const upd = () => { K[k] = parseFloat(el.value); document.getElementById('o-' + k).textContent = fmt[k](K[k]); showOut(); };
+  el.addEventListener('input', upd); upd();
+}
+document.getElementById('reset').addEventListener('click', () => {
+  for (const [k, v] of Object.entries({ pitch: 0, len: 1, echo: 1, crush: 0, bright: 1 })) { const el = document.getElementById('k-' + k); el.value = v; el.dispatchEvent(new Event('input')); }
+});
+document.getElementById('copy').addEventListener('click', () => {
+  const txt = document.getElementById('out').textContent, st = document.getElementById('status');
+  navigator.clipboard.writeText(txt).then(() => st.textContent = 'Copied. Paste it into Claude Code.', () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById('out')); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    st.textContent = 'Clipboard blocked here. The text is selected; press Cmd+C.';
+  });
+});
+render(); showOut();
+</script>

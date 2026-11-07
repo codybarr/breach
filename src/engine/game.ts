@@ -101,12 +101,12 @@ export class Game {
 
     this.kingdom = opts.kingdom ?? this.pickKingdom();
     for (const id of BASIC_PILES) {
-      this.supply[id] = id === 'bit' ? 46 : id === 'byte' ? 40 : id === 'terabyte' ? 30 : id === 'malware' ? 10 : 8;
+      this.supply[id] = id === 'megabyte' ? 46 : id === 'gigabyte' ? 40 : id === 'terabyte' ? 30 : id === 'malware' ? 10 : 8;
     }
     for (const id of this.kingdom) this.supply[id] = 10;
 
     for (const p of this.players) {
-      for (let i = 0; i < 7; i++) p.deck.push(this.make('bit'));
+      for (let i = 0; i < 7; i++) p.deck.push(this.make('megabyte'));
       for (let i = 0; i < 3; i++) p.deck.push(this.make('fragment'));
       this.rng.shuffle(p.deck);
     }

@@ -30,7 +30,7 @@ const L = {
   log: { x: 1345, y: 112 },
 };
 const BASIC_POS: Record<string, { x: number; y: number }> = {
-  bit: { x: 75, y: 712 }, byte: { x: 172, y: 712 }, terabyte: { x: 269, y: 712 },
+  megabyte: { x: 75, y: 712 }, gigabyte: { x: 172, y: 712 }, terabyte: { x: 269, y: 712 },
   fragment: { x: 75, y: 560 }, database: { x: 172, y: 560 }, rootaccess: { x: 269, y: 560 },
   malware: { x: 172, y: 408 },
 };
@@ -170,7 +170,7 @@ export class GameScene implements SceneLike {
     });
     this.previewFrame.at(L.preview.x, L.preview.y, 4);
     this.root.add(this.previewFrame.mesh);
-    this.preview = new CardView('bit');
+    this.preview = new CardView('megabyte');
     this.preview.place(L.preview.x, L.preview.y, 300, L.preview.s).snap();
     this.preview.group.visible = false;
     this.preview.speed = 30;
@@ -233,9 +233,9 @@ export class GameScene implements SceneLike {
   private buildPiles() {
     for (let p = 0; p < 2; p++) {
       const s = L.pileScale[p];
-      const deck = new CardView('bit', false);
+      const deck = new CardView('megabyte', false);
       deck.place(L.deck[p].x, L.deck[p].y, 8, s).snap();
-      const disc = new CardView('bit', true);
+      const disc = new CardView('megabyte', true);
       disc.place(L.discard[p].x, L.discard[p].y, 8, s).snap();
       this.deckViews.push(deck);
       this.discardViews.push(disc);

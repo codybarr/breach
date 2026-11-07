@@ -194,7 +194,7 @@ export class StartScene implements SceneLike {
     mk('BACK', 1450, () => this.setMode('menu'));
 
     for (let i = 0; i < 15; i++) {
-      const v = new CardView('bit');
+      const v = new CardView('megabyte');
       const slot = i;
       v.face.userData.onHover = (on: boolean) => {
         const base = this.slotPos(slot);

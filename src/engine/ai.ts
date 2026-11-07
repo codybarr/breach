@@ -88,8 +88,8 @@ export class AI {
       case 'honeypot': return 50;
       case 'antivirus': return 62;
       case 'garbagecollector': return has((x) => this.isJunk(g, x)) ? 64 : -1;
-      case 'defrag': return has((x) => x.kind === 'malware' || x.id === 'fragment' || x.id === 'bit') ? 66 : -1;
-      case 'cryptominer': return has((x) => x.id === 'bit' || x.id === 'byte') ? 63 : -1;
+      case 'defrag': return has((x) => x.kind === 'malware' || x.id === 'fragment' || x.id === 'megabyte') ? 66 : -1;
+      case 'cryptominer': return has((x) => x.id === 'megabyte' || x.id === 'gigabyte') ? 63 : -1;
       default: return me.cycles > 0 ? 40 : -1;
     }
   }
@@ -123,8 +123,8 @@ export class AI {
       case 'terabyte': return late ? 40 : 62;
       case 'database': return late ? 75 : rootLeft <= 6 ? 50 : 12;
       case 'fragment': return rootLeft <= 2 ? 35 : rootLeft <= 3 ? 16 : -5;
-      case 'byte': return late ? 18 : 30;
-      case 'bit': return -5;
+      case 'gigabyte': return late ? 18 : 30;
+      case 'megabyte': return -5;
       case 'malware': return -100;
     }
 
@@ -159,7 +159,7 @@ export class AI {
   private isJunk(g: Game, d: CardDef): boolean {
     if (d.kind === 'malware') return true;
     if (d.id === 'fragment') return g.supply.rootaccess > 4;
-    if (d.id === 'bit') {
+    if (d.id === 'megabyte') {
       const money = g.allCards(this.p).reduce((a, c) => a + (g.def(c).credits ?? 0), 0);
       return money >= 9;
     }
@@ -192,7 +192,7 @@ export class AI {
         if (out.length >= pr.max) break;
         const d = g.def(hand[i]);
         if (d.kind === 'malware' || (d.id === 'fragment' && g.supply.rootaccess > 4)) out.push(i);
-        else if (d.id === 'bit' && moneyLeft - 1 >= 7) { out.push(i); moneyLeft--; }
+        else if (d.id === 'megabyte' && moneyLeft - 1 >= 7) { out.push(i); moneyLeft--; }
       }
       while (out.length < pr.min) out.push(byKeep.find((i) => !out.includes(i))!);
       return out;

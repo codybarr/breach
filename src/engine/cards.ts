@@ -22,22 +22,29 @@ export interface CardDef {
   effect?: (ctx: Ctx) => Generator<import('./game').Prompt, void, any>;
 }
 
+/** Deterministic block of 0s and 1s; bigger currency = denser grid. */
+function binaryArt(rows: number, cols: number, seed: number): string[] {
+  let s = seed * 2654435761 >>> 0;
+  const bit = () => ((s = (s * 1664525 + 1013904223) >>> 0) >>> 31).toString();
+  return Array.from({ length: rows }, () => Array.from({ length: cols }, bit).join(''));
+}
+
 const defs: CardDef[] = [
   // ───────────── CURRENCY ─────────────
   {
-    id: 'bit', name: 'Bit', cost: 0, kind: 'currency', credits: 1,
-    text: '+1 CR', flavor: 'zero or one. mostly one.',
-    art: ['  ___  ', ' | 1 | ', ' |___| '],
+    id: 'megabyte', name: 'Megabyte', cost: 0, kind: 'currency', credits: 1,
+    text: '+1 CR', flavor: 'fits on a floppy. barely.',
+    art: binaryArt(2, 4, 1),
   },
   {
-    id: 'byte', name: 'Byte', cost: 3, kind: 'currency', credits: 2,
-    text: '+2 CR', flavor: 'eight bits walk into a bar.',
-    art: ['10110010', '01101101', '11010110'],
+    id: 'gigabyte', name: 'Gigabyte', cost: 3, kind: 'currency', credits: 2,
+    text: '+2 CR', flavor: 'a thousand megs walk into a bar.',
+    art: binaryArt(3, 8, 2),
   },
   {
     id: 'terabyte', name: 'Terabyte', cost: 6, kind: 'currency', credits: 3,
     text: '+3 CR', flavor: 'cold storage, hot assets.',
-    art: [' ┌─────┐ ', ' │▓▓▓▓▓│ ', ' │▓ TB▓│ ', ' └─────┘ '],
+    art: binaryArt(6, 16, 3),
   },
   // ───────────── DATA (VP) ─────────────
   {
@@ -291,7 +298,7 @@ const defs: CardDef[] = [
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(defs.map((d) => [d.id, d]));
 export const ALL_CARDS = defs;
-export const BASIC_PILES = ['bit', 'byte', 'terabyte', 'fragment', 'database', 'rootaccess', 'malware'];
+export const BASIC_PILES = ['megabyte', 'gigabyte', 'terabyte', 'fragment', 'database', 'rootaccess', 'malware'];
 export const KINGDOM_POOL = defs.filter((d) => d.kind === 'program').map((d) => d.id);
 
 export function typeLine(d: CardDef): string {
