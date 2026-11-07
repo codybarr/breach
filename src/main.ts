@@ -2,6 +2,7 @@ import type { Difficulty } from './engine/ai';
 import { warmCardTextures } from './render/cardArt';
 import { Stage } from './render/stage';
 import { NetClient, session } from './net/client';
+import { setupMobile } from './mobile';
 import type { MatchStart } from './net/protocol';
 import { GameScene } from './scenes/GameScene';
 import { LobbyScene } from './scenes/LobbyScene';
@@ -19,6 +20,7 @@ async function boot() {
   document.getElementById('boot')?.remove();
 
   const stage = new Stage(document.body);
+  setupMobile();
   let difficulty: Difficulty = 'normal';
 
   const goMenu = () =>
