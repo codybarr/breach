@@ -49,6 +49,8 @@ GAME END
   When ROOT ACCESS runs out or any 3 supply piles empty.
   Ties break on remaining integrity.`;
 
+const VOLUME_ROW = 4;
+
 export class StartScene implements SceneLike {
   root = new THREE.Group();
   private menu = new THREE.Group();
@@ -113,6 +115,7 @@ export class StartScene implements SceneLike {
       ['', () => this.cycleDifficulty(1)],
       ['CARD INDEX', () => this.setMode('index')],
       ['PROTOCOL', () => this.setMode('rules')],
+      ['', () => this.stepVolume(sfx.volume >= 100 ? -100 : 10)],
     ];
     items.forEach(([label, fn], i) => {
       const b = new Button(420, 56, { label, color: i === 0 ? COLOR.green : COLOR.cyan });
@@ -135,7 +138,7 @@ export class StartScene implements SceneLike {
     this.boot.at(300, 130, 10);
     this.menu.add(this.boot.mesh);
 
-    const help = new Label(560, 24, '[↑↓] select   [←→] difficulty   [ENTER] execute   [M] mute',
+    const help = new Label(560, 24, '[↑↓] select   [←→] adjust   [ENTER] execute   [M] mute',
       { size: 13, align: 'right', color: COLOR.dim, glow: 0 });
     help.at(1300, 40, 10);
     this.menu.add(help.mesh);
@@ -150,7 +153,7 @@ export class StartScene implements SceneLike {
   // ───────────────────────── menu ─────────────────────────
 
   private baseLabel(j: number) {
-    return ['JACK IN', `DIFFICULTY: ${DIFFICULTIES[this.diffIdx].name}`, 'CARD INDEX', 'PROTOCOL'][j];
+    return ['JACK IN', `DIFFICULTY: ${DIFFICULTIES[this.diffIdx].name}`, 'CARD INDEX', 'PROTOCOL', `VOLUME: ${sfx.volume}`][j];
   }
 
   private setFocus(i: number, sound = true) {
@@ -162,6 +165,11 @@ export class StartScene implements SceneLike {
   private cycleDifficulty(dir: number) {
     this.diffIdx = (this.diffIdx + dir + DIFFICULTIES.length) % DIFFICULTIES.length;
     this.refreshDifficulty();
+  }
+
+  private stepVolume(delta: number) {
+    sfx.volume += delta;
+    this.setFocus(this.focus, false);
   }
 
   private refreshDifficulty() {
@@ -288,7 +296,9 @@ export class StartScene implements SceneLike {
     if (e.key === 'ArrowDown') this.setFocus(this.focus + 1);
     else if (e.key === 'ArrowUp') this.setFocus(this.focus - 1);
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      this.cycleDifficulty(e.key === 'ArrowLeft' ? -1 : 1);
+      const dir = e.key === 'ArrowLeft' ? -1 : 1;
+      if (this.focus === VOLUME_ROW) this.stepVolume(dir * 10);
+      else this.cycleDifficulty(dir);
       sfx.click();
     } else if (e.key === 'Enter' || e.key === ' ') {
       sfx.click();

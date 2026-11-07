@@ -299,6 +299,8 @@ export class GameScene implements SceneLike {
 
   onKey(e: KeyboardEvent) {
     if (e.key === 'm' || e.key === 'M') { sfx.muted = !sfx.muted; return; }
+    if (e.key === '-' || e.key === '_') { sfx.volume -= 10; sfx.click(); return; }
+    if (e.key === '=' || e.key === '+') { sfx.volume += 10; sfx.click(); return; }
     if (this.game.over) return;
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
