@@ -59,7 +59,7 @@ export function applyAction(g: Game, seat: number, action: Action): boolean {
       g.toBuyPhase(seat);
       return true;
     case 'buy':
-      if (!(action.pile in g.supply)) return false;
+      if (!(action.pile in g.supply) || g.def(action.pile)?.kind === 'malware') return false;
       if (action.auto && !g.canBuy(seat, action.pile)) g.playAllCurrency(seat);
       return g.buy(seat, action.pile);
     case 'end':

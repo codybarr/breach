@@ -407,7 +407,7 @@ export class GameScene implements SceneLike {
       if (g.supplyEligible(pr, id)) this.act({ k: 'answer', a: id });
       return;
     }
-    if (!this.myTurn()) return;
+    if (!this.myTurn() || g.def(id).kind === 'malware') return;
     // Convenience: buying from the action phase auto-runs your currency first.
     const s = g.players[this.me];
     const auto = !g.canBuy(this.me, id) && s.hand.some((c) => g.def(c).kind === 'currency')

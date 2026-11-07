@@ -179,7 +179,7 @@ export class Game {
   }
 
   canBuy(p: number, pile: string): boolean {
-    if (this.over || this.pending || this.current !== p) return false;
+    if (this.over || this.pending || this.current !== p || this.def(pile)?.kind === 'malware') return false;
     const s = this.players[p];
     return s.bandwidth > 0 && (this.supply[pile] ?? 0) > 0 && s.credits >= this.def(pile).cost;
   }
