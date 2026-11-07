@@ -40,13 +40,30 @@ interface Lathe extends Style {
   inside?: boolean;
 }
 
+/** A height field z = h(x, y) over a rectangle, facing +z. */
+interface Field extends Style {
+  x: [number, number];
+  y: [number, number];
+  h: (x: number, y: number) => number;
+  /** Per-point brightness multiplier; dots below 0.05 are dropped (holes, edge fades). */
+  mask?: (x: number, y: number) => number;
+}
+
 /** A surface sample: position, normal, pitch (for splat size), brightness, color. */
 interface Sample { p: V3; n: V3; pitch: number; a: number; color: string }
 
 /** A free-floating dot that is not culled, shaded or used as an occluder (particles, trails). */
 interface Dot { p: V3; r: number; a: number; color: string }
 
-interface Camera { yaw: number; pitch: number; dist: number; target: V3 }
+interface Camera {
+  yaw: number; pitch: number; dist: number; target: V3;
+  /** Direction toward the light (default upper-left-front). */
+  light?: V3;
+  /** Brightness of faces turned away from the light, 0..1 (default 0.35). */
+  ambient?: number;
+  /** Fit the frame to clearly visible surfaces only, letting particles and faint fringes run off the edge (default false). */
+  fitSurfaces?: boolean;
+}
 
 type Tri = [V3, V3, V3];
 
@@ -156,6 +173,44 @@ function latheSamples(l: Lathe, col: string): Sample[] {
   return out;
 }
 
+function fieldNormal(f: Field, x: number, y: number): V3 {
+  const e = 1e-3;
+  const hx = (f.h(x + e, y) - f.h(x - e, y)) / (2 * e);
+  const hy = (f.h(x, y + e) - f.h(x, y - e)) / (2 * e);
+  return norm([-hx, -hy, 1]);
+}
+
+function fieldSamples(f: Field, col: string): Sample[] {
+  const out: Sample[] = [];
+  const ny = Math.round((f.y[1] - f.y[0]) / f.pitch);
+  for (let j = 0; j <= ny; j++) {
+    const y = f.y[0] + ((f.y[1] - f.y[0]) * j) / ny;
+    // Walk each row by surface arc length so steep slopes aren't sparse.
+    for (let x = f.x[0]; x <= f.x[1] + 1e-6;) {
+      const m = f.mask ? f.mask(x, y) : 1;
+      const n = fieldNormal(f, x, y);
+      if (m >= 0.05) out.push({ p: [x, y, f.h(x, y)], n, pitch: f.pitch, a: (f.gain ?? 1) * m, color: f.color ?? col });
+      x += f.pitch * Math.max(0.25, n[2] / Math.hypot(n[0], n[2]));
+    }
+  }
+  return out;
+}
+
+function fieldTris(f: Field): Tri[] {
+  const out: Tri[] = [];
+  const step = f.pitch;
+  const nx = Math.round((f.x[1] - f.x[0]) / step), ny = Math.round((f.y[1] - f.y[0]) / step);
+  const at = (i: number, j: number): V3 => {
+    const x = f.x[0] + ((f.x[1] - f.x[0]) * i) / nx, y = f.y[0] + ((f.y[1] - f.y[0]) * j) / ny;
+    return [x, y, f.h(x, y)];
+  };
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const a = at(i, j), b = at(i + 1, j), c = at(i + 1, j + 1), d = at(i, j + 1);
+    out.push([a, b, c], [a, c, d]);
+  }
+  return out;
+}
+
 /** Collects a model's dot samples, occluder triangles and free particles. */
 class Scene {
   samples: Sample[] = [];
@@ -164,6 +219,7 @@ class Scene {
   constructor(private col: string) {}
   box(b: Box) { this.samples.push(...boxSamples(b, this.col)); this.tris.push(...boxTris(b)); }
   lathe(l: Lathe) { this.samples.push(...latheSamples(l, this.col)); this.tris.push(...latheTris(l)); }
+  field(f: Field) { this.samples.push(...fieldSamples(f, this.col)); this.tris.push(...fieldTris(f)); }
 }
 
 function render(
@@ -180,7 +236,8 @@ function render(
   const fwd = norm(sub(cam.target, eye));
   const right = norm([fwd[2], 0, -fwd[0]]);
   const up = cross(fwd, right);
-  const light = norm([-0.5, 1, 0.7]);
+  const light = norm(cam.light ?? [-0.5, 1, 0.7]);
+  const amb = cam.ambient ?? 0.35;
 
   interface P { x: number; y: number; z: number; r: number; a: number; color: string; pitch: number; free: boolean }
   const pts: P[] = [];
@@ -191,14 +248,15 @@ function render(
   };
   for (const s of samples) {
     if (dot3(s.n, sub(eye, s.p)) <= 0) continue; // back-facing
-    const lam = 0.35 + 0.65 * Math.max(0, dot3(s.n, light));
+    const lam = amb + (1 - amb) * Math.max(0, dot3(s.n, light));
     pts.push({ ...project(s.p), r: 0, a: s.a * lam, color: s.color, pitch: s.pitch, free: false });
   }
   for (const e of extra) pts.push({ ...project(e.p), r: e.r, a: e.a, color: e.color, pitch: 0, free: true });
 
   // Fit the projected cloud into the art window (with padding), centred.
   const pad = 12;
-  const xs = pts.map((d) => d.x), ys = pts.map((d) => d.y);
+  const fitPts = cam.fitSurfaces ? pts.filter((d) => !d.free && d.a > 0.3) : pts;
+  const xs = fitPts.map((d) => d.x), ys = fitPts.map((d) => d.y);
   const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   const k = Math.min((aw - 2 * pad) / (x1 - x0), (ah - 2 * pad) / (y1 - y0));
   for (const d of pts) {

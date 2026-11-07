@@ -5,6 +5,9 @@ export type CardKind = 'currency' | 'data' | 'malware' | 'program';
 /** Procedural 3D dot-matrix models available as card art (drawn in render/dotModels). */
 export type DotModel = 'cpu' | 'honeypot';
 
+/** Flat pixel-art sprites available as card art (drawn in render/pixelArt). */
+export type PixelSprite = 'nose' | 'kiddie';
+
 export interface CardDef {
   id: string;
   name: string;
@@ -24,6 +27,8 @@ export interface CardDef {
   network?: number;
   /** If set, art is this 3D dot-matrix model instead of ASCII. */
   model?: DotModel;
+  /** If set, art is this flat pixel-art sprite instead of ASCII. */
+  sprite?: PixelSprite;
   /** +cycles granted; used by the AI to tell terminals from non-terminals. */
   givesCycles?: number;
   effect?: (ctx: Ctx) => Generator<import('./game').Prompt, void, any>;
@@ -93,7 +98,7 @@ const defs: CardDef[] = [
     id: 'scriptkiddie', name: 'Script Kiddie', cost: 2, kind: 'program', exploit: true, givesCycles: 1,
     text: '+1 Cycle\n+1 CR\nExploit: Breach 1.',
     flavor: 'copy. paste. pwn?',
-    art: ['  (o_o) ', ' <)  )> ', '  /  \\  '],
+    art: ['  (o_o) ', ' <)  )> ', '  /  \\  '], sprite: 'kiddie',
     *effect(c) {
       c.cycles(1); c.credits(1);
       yield* c.exploit(function* (t) { t.breach(1); });
@@ -135,7 +140,7 @@ const defs: CardDef[] = [
     id: 'packetsniffer', name: 'Packet Sniffer', cost: 4, kind: 'program', exploit: true,
     text: '+2 CR\nExploit: opponent\ndiscards down to\n3 cards.',
     flavor: 'tcpdump -i eth0',
-    art: [' >>--> ', ' [ ? ] ', ' <--<< '],
+    art: [' >>--> ', ' [ ? ] ', ' <--<< '], sprite: 'nose',
     *effect(c) {
       c.credits(2);
       yield* c.exploit(function* (t) {

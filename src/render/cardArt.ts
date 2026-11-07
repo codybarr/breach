@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CARDS, cardColor, typeLine, type CardDef } from '../engine/cards';
 import { COLOR, FONT, TITLE_FONT, hexA, wrap } from './ui';
 import { DOT_MODELS } from './dotModels';
+import { PIXEL_SPRITES } from './pixelArt';
 
 export const CARD_W = 150;
 export const CARD_H = 210;
@@ -236,6 +237,7 @@ function drawFace(d: CardDef): HTMLCanvasElement {
   ctx.strokeRect(ax + 0.5, ay + 0.5, aw - 1, ah - 1);
   if (d.network) drawNetwork(ctx, rnd, d.network, ax, ay, aw, ah, col);
   else if (d.model) DOT_MODELS[d.model](ctx, rnd, ax, ay, aw, ah, col);
+  else if (d.sprite) PIXEL_SPRITES[d.sprite](ctx, rnd, ax, ay, aw, ah, col);
   else drawAsciiArt(ctx, d.art, ax, ay, aw, ah, col);
   ctx.restore();
 
