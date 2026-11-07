@@ -1,5 +1,5 @@
 /** Tiny WebAudio synth for low, murky terminal tones. No asset files. */
-const MASTER_GAIN = 0.4;
+const MASTER_GAIN = 1.0;
 const VOLUME_KEY = 'breach.volume';
 
 class Sfx {
@@ -44,7 +44,15 @@ class Sfx {
         lp.type = 'lowpass';
         lp.frequency.value = 1400;
         lp.Q.value = 0.7;
-        master.connect(lp).connect(ctx.destination);
+        // Brick-wall-ish limiter: voices play at full gain, so overlaps would otherwise clip.
+        const limiter = ctx.createDynamicsCompressor();
+        limiter.threshold.value = -1;
+        limiter.knee.value = 0;
+        limiter.ratio.value = 20;
+        limiter.attack.value = 0.002;
+        limiter.release.value = 0.1;
+        limiter.connect(ctx.destination);
+        master.connect(lp).connect(limiter);
 
         const delay = ctx.createDelay(1);
         delay.delayTime.value = 0.21;
@@ -57,7 +65,7 @@ class Sfx {
         wet.gain.value = 0.28;
         lp.connect(delay);
         delay.connect(fbLp).connect(fb).connect(delay);
-        delay.connect(wet).connect(ctx.destination);
+        delay.connect(wet).connect(limiter);
 
         this.ctx = ctx;
         this.master = master;
@@ -70,7 +78,7 @@ class Sfx {
   }
 
   /** Soft-attack tone; `detune` (cents) adds a second, slightly-off voice for a thick, uneasy sound. */
-  private tone(freq: number, dur: number, type: OscillatorType = 'triangle', vol = 0.5, delay = 0, slide = 0, detune = 0) {
+  private tone(freq: number, dur: number, type: OscillatorType = 'triangle', vol = 1, delay = 0, slide = 0, detune = 0) {
     const ac = this.ac();
     if (!ac || !this.master) return;
     const t = ac.currentTime + delay;
@@ -94,7 +102,7 @@ class Sfx {
   }
 
   /** Low rumbling noise burst. */
-  private noise(dur: number, vol = 0.4, delay = 0, cutoff = 400) {
+  private noise(dur: number, vol = 1, delay = 0, cutoff = 400) {
     const ac = this.ac();
     if (!ac || !this.master) return;
     const len = Math.floor(ac.sampleRate * dur);
@@ -116,30 +124,30 @@ class Sfx {
     const now = performance.now();
     if (now - this.lastHover < 40) return;
     this.lastHover = now;
-    this.tone(330, 0.04, 'sine', 0.06);
+    this.tone(330, 0.04, 'sine', 1);
   }
-  click() { this.tone(165, 0.09, 'triangle', 0.3); this.tone(110, 0.12, 'sine', 0.3, 0.03); }
-  play() { this.tone(98, 0.2, 'sawtooth', 0.22, 0, 49, 9); this.noise(0.08, 0.15, 0, 300); }
-  coin() { this.tone(330, 0.1, 'triangle', 0.22); this.tone(392, 0.18, 'triangle', 0.2, 0.08); }
-  draw() { this.tone(520, 0.03, 'sine', 0.1); this.noise(0.03, 0.08, 0, 900); }
-  shuffle() { for (let i = 0; i < 6; i++) this.tone(140 + i * 18, 0.05, 'triangle', 0.12, i * 0.035); }
+  click() { this.tone(165, 0.09, 'triangle', 1); this.tone(110, 0.12, 'sine', 1, 0.03); }
+  play() { this.tone(98, 0.2, 'sawtooth', 1, 0, 49, 9); this.noise(0.08, 1, 0, 300); }
+  coin() { this.tone(330, 0.1, 'triangle', 1); this.tone(392, 0.18, 'triangle', 1, 0.08); }
+  draw() { this.tone(520, 0.03, 'sine', 1); this.noise(0.03, 1, 0, 900); }
+  shuffle() { for (let i = 0; i < 6; i++) this.tone(140 + i * 18, 0.05, 'triangle', 1, i * 0.035); }
   breach() {
-    this.noise(0.5, 0.6, 0, 250);
-    this.tone(70, 0.6, 'sawtooth', 0.4, 0, -35, 14);
-    this.tone(41, 0.8, 'sine', 0.5);
+    this.noise(0.5, 1, 0, 250);
+    this.tone(70, 0.6, 'sawtooth', 1, 0, -35, 14);
+    this.tone(41, 0.8, 'sine', 1);
   }
-  heal() { [220, 262, 330].forEach((f, i) => this.tone(f, 0.35, 'sine', 0.22, i * 0.09)); }
-  block() { this.tone(110, 0.2, 'triangle', 0.35, 0, 0, 12); this.tone(73, 0.3, 'sine', 0.35, 0.08); }
-  turn() { this.tone(196, 0.12, 'triangle', 0.18); this.tone(147, 0.2, 'triangle', 0.18, 0.1); }
-  trash() { this.tone(150, 0.35, 'sawtooth', 0.2, 0, -110, 10); }
+  heal() { [220, 262, 330].forEach((f, i) => this.tone(f, 0.35, 'sine', 1, i * 0.09)); }
+  block() { this.tone(110, 0.2, 'triangle', 1, 0, 0, 12); this.tone(73, 0.3, 'sine', 1, 0.08); }
+  turn() { this.tone(196, 0.12, 'triangle', 1); this.tone(147, 0.2, 'triangle', 1, 0.1); }
+  trash() { this.tone(150, 0.35, 'sawtooth', 1, 0, -110, 10); }
   boot() {
-    this.tone(55, 1.0, 'sine', 0.35);
-    for (let i = 0; i < 8; i++) this.tone(80 + Math.random() * 320, 0.05, 'triangle', 0.12, 0.1 + i * 0.06);
+    this.tone(55, 1.0, 'sine', 1);
+    for (let i = 0; i < 8; i++) this.tone(80 + Math.random() * 320, 0.05, 'triangle', 1, 0.1 + i * 0.06);
   }
-  win() { [220, 262, 330, 494].forEach((f, i) => this.tone(f, 0.45, 'triangle', 0.22, i * 0.15, 0, 7)); }
+  win() { [220, 262, 330, 494].forEach((f, i) => this.tone(f, 0.45, 'triangle', 1, i * 0.15, 0, 7)); }
   lose() {
-    [196, 185, 165, 131].forEach((f, i) => this.tone(f, 0.5, 'sawtooth', 0.2, i * 0.2, 0, 15));
-    this.tone(49, 1.2, 'sine', 0.4, 0.6);
+    [196, 185, 165, 131].forEach((f, i) => this.tone(f, 0.5, 'sawtooth', 1, i * 0.2, 0, 15));
+    this.tone(49, 1.2, 'sine', 1, 0.6);
   }
 }
 
