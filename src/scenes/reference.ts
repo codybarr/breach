@@ -21,7 +21,7 @@ KEYWORDS
   TRASH    removes a card from the game for good.
 
 GAME END
-  When ROOT ACCESS runs out or any 3 supply piles empty.
+  When MAINFRAME runs out or any 3 supply piles empty.
   Ties break on remaining integrity.`;
 
 export const GLOSSARY = `CARDS

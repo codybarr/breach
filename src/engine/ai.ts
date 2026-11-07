@@ -88,7 +88,7 @@ export class AI {
       case 'honeypot': return 50;
       case 'antivirus': return 62;
       case 'garbagecollector': return has((x) => this.isJunk(g, x)) ? 64 : -1;
-      case 'defrag': return has((x) => x.kind === 'malware' || x.id === 'fragment' || x.id === 'megabyte') ? 66 : -1;
+      case 'defrag': return has((x) => x.kind === 'malware' || x.id === 'node' || x.id === 'megabyte') ? 66 : -1;
       case 'cryptominer': return has((x) => x.id === 'megabyte' || x.id === 'gigabyte') ? 63 : -1;
       default: return me.cycles > 0 ? 40 : -1;
     }
@@ -113,16 +113,16 @@ export class AI {
     const mine = g.allCards(this.p);
     const opp = g.players[1 - this.p];
     const me = g.players[this.p];
-    const rootLeft = g.supply.rootaccess;
+    const rootLeft = g.supply.mainframe;
     const late = rootLeft <= 4 || g.emptyPiles() >= 2;
     const money = mine.reduce((a, c) => a + (g.def(c).credits ?? 0), 0);
     const copies = mine.filter((c) => c.def === id).length;
 
     switch (id) {
-      case 'rootaccess': return money < 12 && !late ? 45 : 100;
+      case 'mainframe': return money < 12 && !late ? 45 : 100;
       case 'terabyte': return late ? 40 : 62;
-      case 'database': return late ? 75 : rootLeft <= 6 ? 50 : 12;
-      case 'fragment': return rootLeft <= 2 ? 35 : rootLeft <= 3 ? 16 : -5;
+      case 'server': return late ? 75 : rootLeft <= 6 ? 50 : 12;
+      case 'node': return rootLeft <= 2 ? 35 : rootLeft <= 3 ? 16 : -5;
       case 'gigabyte': return late ? 18 : 30;
       case 'megabyte': return -5;
       case 'malware': return -100;
@@ -158,7 +158,7 @@ export class AI {
 
   private isJunk(g: Game, d: CardDef): boolean {
     if (d.kind === 'malware') return true;
-    if (d.id === 'fragment') return g.supply.rootaccess > 4;
+    if (d.id === 'node') return g.supply.mainframe > 4;
     if (d.id === 'megabyte') {
       const money = g.allCards(this.p).reduce((a, c) => a + (g.def(c).credits ?? 0), 0);
       return money >= 9;
@@ -169,7 +169,7 @@ export class AI {
   /** Lower = happier to lose it. */
   private keepValue(d: CardDef): number {
     if (d.kind === 'malware') return -10;
-    if (d.kind === 'data') return d.id === 'fragment' ? -2 : -1;
+    if (d.kind === 'data') return d.id === 'node' ? -2 : -1;
     if (d.kind === 'currency') return (d.credits ?? 0) * 3;
     return 4 + d.cost;
   }
@@ -191,7 +191,7 @@ export class AI {
       for (const i of byKeep) {
         if (out.length >= pr.max) break;
         const d = g.def(hand[i]);
-        if (d.kind === 'malware' || (d.id === 'fragment' && g.supply.rootaccess > 4)) out.push(i);
+        if (d.kind === 'malware' || (d.id === 'node' && g.supply.mainframe > 4)) out.push(i);
         else if (d.id === 'megabyte' && moneyLeft - 1 >= 7) { out.push(i); moneyLeft--; }
       }
       while (out.length < pr.min) out.push(byKeep.find((i) => !out.includes(i))!);

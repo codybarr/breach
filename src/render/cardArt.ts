@@ -89,6 +89,79 @@ function fitFont(ctx: CanvasRenderingContext2D, text: string, maxW: number, size
   return s;
 }
 
+function drawAsciiArt(ctx: CanvasRenderingContext2D, art: string[], ax: number, ay: number, aw: number, ah: number, col: string) {
+  const maxLen = Math.max(...art.map((l) => l.length));
+  const artSize = Math.min(30, (aw - 24) / (maxLen * 0.6), (ah - 20) / (art.length * 1.1));
+  ctx.font = `${artSize}px ${FONT}`;
+  ctx.fillStyle = col;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 12;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const lh = artSize * 1.1;
+  art.forEach((ln, i) => {
+    ctx.fillText(ln, ax + aw / 2, ay + ah / 2 + (i - (art.length - 1) / 2) * lh);
+  });
+}
+
+/** Seeded network graph: n spread-out nodes joined by a spanning tree plus a few cross-links. */
+function drawNetwork(ctx: CanvasRenderingContext2D, rnd: () => number, n: number, ax: number, ay: number, aw: number, ah: number, col: string) {
+  const pad = 22;
+  const pts: { x: number; y: number }[] = [];
+  let minD = n <= 2 ? 130 : n <= 5 ? 64 : 42;
+  for (let tries = 0; pts.length < n; tries++) {
+    if (tries > 400) { minD *= 0.85; tries = 0; }
+    const p = { x: ax + pad + rnd() * (aw - 2 * pad), y: ay + pad + rnd() * (ah - 2 * pad) };
+    if (pts.every((q) => Math.hypot(p.x - q.x, p.y - q.y) >= minD)) pts.push(p);
+  }
+  const dist = (i: number, j: number) => Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
+
+  // Prim's MST, then a few nearest-neighbour cross-links so it reads as a mesh, not a tree.
+  const edges: [number, number][] = [];
+  const key = (i: number, j: number) => (i < j ? `${i}-${j}` : `${j}-${i}`);
+  const linked = new Set<string>();
+  const inTree = new Set([0]);
+  while (inTree.size < n) {
+    let best: [number, number] = [0, 0], bd = Infinity;
+    for (const i of inTree) for (let j = 0; j < n; j++) {
+      if (!inTree.has(j) && dist(i, j) < bd) { bd = dist(i, j); best = [i, j]; }
+    }
+    edges.push(best); linked.add(key(...best)); inTree.add(best[1]);
+  }
+  for (let k = 0; k < Math.floor(n / 3); k++) {
+    const i = Math.floor(rnd() * n);
+    let bj = -1, bd = Infinity;
+    for (let j = 0; j < n; j++) if (j !== i && !linked.has(key(i, j)) && dist(i, j) < bd) { bd = dist(i, j); bj = j; }
+    if (bj >= 0) { edges.push([i, bj]); linked.add(key(i, bj)); }
+  }
+
+  const degree = new Array(n).fill(0);
+  for (const [i, j] of edges) { degree[i]++; degree[j]++; }
+  const hub = n > 2 ? degree.indexOf(Math.max(...degree)) : -1;
+
+  ctx.shadowColor = col;
+  ctx.strokeStyle = hexA(col, 0.7);
+  ctx.lineWidth = n > 5 ? 1.5 : 2;
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  for (const [i, j] of edges) { ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); }
+  ctx.stroke();
+
+  const base = n <= 2 ? 22 : n <= 5 ? 16 : 11;
+  ctx.shadowBlur = 12;
+  pts.forEach((p, i) => {
+    const s = i === hub ? base * 1.5 : base;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(p.x - s / 2, p.y - s / 2, s, s);
+    ctx.fillStyle = col;
+    const c = s * 0.36;
+    ctx.fillRect(p.x - c / 2, p.y - c / 2, c, c);
+  });
+}
+
 function drawFace(d: CardDef): HTMLCanvasElement {
   const [cv, ctx] = makeCanvas();
   const col = cardColor(d);
@@ -160,18 +233,8 @@ function drawFace(d: CardDef): HTMLCanvasElement {
   ctx.strokeStyle = hexA(col, 0.6);
   ctx.lineWidth = 1.5;
   ctx.strokeRect(ax + 0.5, ay + 0.5, aw - 1, ah - 1);
-  const maxLen = Math.max(...d.art.map((l) => l.length));
-  const artSize = Math.min(30, (aw - 24) / (maxLen * 0.6), (ah - 20) / (d.art.length * 1.1));
-  ctx.font = `${artSize}px ${FONT}`;
-  ctx.fillStyle = col;
-  ctx.shadowColor = col;
-  ctx.shadowBlur = 12;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const lh = artSize * 1.1;
-  d.art.forEach((ln, i) => {
-    ctx.fillText(ln, ax + aw / 2, ay + ah / 2 + (i - (d.art.length - 1) / 2) * lh);
-  });
+  if (d.network) drawNetwork(ctx, rnd, d.network, ax, ay, aw, ah, col);
+  else drawAsciiArt(ctx, d.art, ax, ay, aw, ah, col);
   ctx.restore();
 
   // Type line.

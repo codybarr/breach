@@ -17,6 +17,8 @@ export interface CardDef {
   flavor?: string;
   /** Small ASCII glyph used as card art. */
   art: string[];
+  /** If set, art is a drawn network graph with this many nodes instead of ASCII. */
+  network?: number;
   /** +cycles granted; used by the AI to tell terminals from non-terminals. */
   givesCycles?: number;
   effect?: (ctx: Ctx) => Generator<import('./game').Prompt, void, any>;
@@ -48,19 +50,19 @@ const defs: CardDef[] = [
   },
   // ───────────── DATA (VP) ─────────────
   {
-    id: 'fragment', name: 'Data Fragment', cost: 2, kind: 'data', vp: 1,
-    text: '1 VP', flavor: 'a shard of something bigger.',
-    art: ['  /\\  ', ' /  \\ ', ' \\  / ', '  \\/  '],
+    id: 'node', name: 'Node', cost: 2, kind: 'data', vp: 1,
+    text: '1 VP', flavor: 'a foothold.',
+    art: [], network: 2,
   },
   {
-    id: 'database', name: 'Database', cost: 5, kind: 'data', vp: 3,
-    text: '3 VP', flavor: 'SELECT * FROM secrets;',
-    art: [' .===. ', ' |===| ', ' |===| ', " '===' "],
+    id: 'server', name: 'Server', cost: 5, kind: 'data', vp: 3,
+    text: '3 VP', flavor: 'uptime: 847 days. not anymore.',
+    art: [], network: 5,
   },
   {
-    id: 'rootaccess', name: 'Root Access', cost: 8, kind: 'data', vp: 6,
+    id: 'mainframe', name: 'Mainframe', cost: 8, kind: 'data', vp: 6,
     text: '6 VP\nWhen this pile empties,\nthe game ends.', flavor: '# whoami\nroot',
-    art: ['  ___  ', ' |_#_| ', ' |   | ', ' |___| '],
+    art: [], network: 12,
   },
   // ───────────── MALWARE (curse) ─────────────
   {
@@ -298,7 +300,7 @@ const defs: CardDef[] = [
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(defs.map((d) => [d.id, d]));
 export const ALL_CARDS = defs;
-export const BASIC_PILES = ['megabyte', 'gigabyte', 'terabyte', 'fragment', 'database', 'rootaccess', 'malware'];
+export const BASIC_PILES = ['megabyte', 'gigabyte', 'terabyte', 'node', 'server', 'mainframe', 'malware'];
 export const KINGDOM_POOL = defs.filter((d) => d.kind === 'program').map((d) => d.id);
 
 export function typeLine(d: CardDef): string {

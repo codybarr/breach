@@ -107,7 +107,7 @@ export class Game {
 
     for (const p of this.players) {
       for (let i = 0; i < 7; i++) p.deck.push(this.make('megabyte'));
-      for (let i = 0; i < 3; i++) p.deck.push(this.make('fragment'));
+      for (let i = 0; i < 3; i++) p.deck.push(this.make('node'));
       this.rng.shuffle(p.deck);
     }
     for (let i = 0; i < 2; i++) this.drawCards(i, HAND_SIZE, true);
@@ -246,8 +246,8 @@ export class Game {
     s.cycles = s.credits = s.bandwidth = 0;
     this.drawCards(p, HAND_SIZE, true);
 
-    if (this.supply.rootaccess <= 0 || this.emptyPiles() >= 3) {
-      this.finishByScore(this.supply.rootaccess <= 0 ? 'ROOT ACCESS DEPLETED' : 'THREE SUPPLY PILES EMPTY');
+    if (this.supply.mainframe <= 0 || this.emptyPiles() >= 3) {
+      this.finishByScore(this.supply.mainframe <= 0 ? 'MAINFRAME CAPTURED' : 'THREE SUPPLY PILES EMPTY');
       return;
     }
     this.startTurn(1 - p);

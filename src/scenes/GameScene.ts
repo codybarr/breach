@@ -31,7 +31,7 @@ const L = {
 };
 const BASIC_POS: Record<string, { x: number; y: number }> = {
   megabyte: { x: 75, y: 712 }, gigabyte: { x: 172, y: 712 }, terabyte: { x: 269, y: 712 },
-  fragment: { x: 75, y: 560 }, database: { x: 172, y: 560 }, rootaccess: { x: 269, y: 560 },
+  node: { x: 75, y: 560 }, server: { x: 172, y: 560 }, mainframe: { x: 269, y: 560 },
   malware: { x: 172, y: 408 },
 };
 const BASIC_S = 0.58;
