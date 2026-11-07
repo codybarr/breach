@@ -9,7 +9,9 @@ export const CARD_H = 210;
 const TW = 300, TH = 420; // canvas design units (2x card world size)
 const RES = 1.6;
 
-const cache = new Map<string, THREE.CanvasTexture>();
+// Kept in import.meta.hot.data so every hot-reloaded version of this module shares
+// the textures already on screen (see the HMR block at the bottom).
+const cache: Map<string, THREE.CanvasTexture> = import.meta.hot?.data.cache ?? new Map();
 
 function seeded(seed: number) {
   let s = seed >>> 0;
@@ -438,4 +440,24 @@ export function warmCardTextures() {
   for (const id of Object.keys(CARDS)) faceTexture(id);
   backTexture();
   glowTexture();
+}
+
+/** Fired on window after a hot update repaints card textures (dev only). */
+export const CARD_ART_UPDATED = 'card-art-updated';
+
+// Dev: art edits (here, dotModels, pixelArt) stop at this module. Repaint every
+// live texture in place so cards update on screen without a reload or lost state.
+if (import.meta.hot) {
+  const hot = import.meta.hot;
+  const isUpdate = hot.data.cache !== undefined;
+  hot.data.cache = cache;
+  hot.accept();
+  if (isUpdate) {
+    for (const [id, t] of cache) {
+      if (id === '__glow' || (id !== '__back' && !CARDS[id])) continue;
+      t.image = id === '__back' ? drawBack() : drawFace(CARDS[id]);
+      t.needsUpdate = true;
+    }
+    window.dispatchEvent(new Event(CARD_ART_UPDATED));
+  }
 }

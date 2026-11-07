@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BREACH.EXE · cards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet" />
+    <style>
+      body { margin: 0; padding: 16px; background: #020806; color: #33ff88; font: 14px "Share Tech Mono", monospace; }
+      header { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 16px; }
+      h1 { margin: 0; font: 32px "VT323", monospace; }
+      input[type="search"] { background: #000; color: inherit; border: 1px solid #1f5a3d; padding: 4px 8px; font: inherit; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-w, 240px), 1fr)); gap: 16px; }
+      figure { margin: 0; }
+      figure canvas { width: 100%; height: auto; display: block; }
+      figcaption { margin-top: 4px; color: #3fa070; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <!-- Dev-only card index (not part of the production build). Edits to card art hot-update in place. -->
+    <script type="module" src="/src/dev/cardGallery.ts"></script>
+  </body>
+</html>
