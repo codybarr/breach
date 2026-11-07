@@ -11,6 +11,7 @@ import { VH, VW, type SceneLike, type Stage } from '../render/stage';
 import { Button, COLOR, CanvasPlane, FONT, Label, TITLE_FONT, drawFrame, hexA, wrap } from '../render/ui';
 import { DIFFICULTIES } from './StartScene';
 import { MatchTimer } from './matchTimer';
+import { ReferenceOverlay } from './ReferenceOverlay';
 
 // ───────────────────────── layout (virtual px, y-up) ─────────────────────────
 const MID_X = 707;
@@ -97,6 +98,8 @@ export class GameScene implements SceneLike {
   private btnB: Button;
   private btnC: Button;
   private btnAbort: Button;
+  private btnHelp: Button;
+  private reference = new ReferenceOverlay();
   private abortArmed = 0;
   private floaters: Floater[] = [];
 
@@ -145,8 +148,8 @@ export class GameScene implements SceneLike {
     this.banner.at(L.banner.x, L.banner.y, 6);
     this.info = new Label(330, 30, '', { size: 14, color: COLOR.mid, glow: 0 });
     this.info.at(1265, 866, 5);
-    this.timerLabel = new Label(200, 30, '', { size: 16, color: COLOR.cyan, align: 'center' });
-    this.timerLabel.at(975, 866, 5);
+    this.timerLabel = new Label(200, 20, '', { size: 16, color: COLOR.cyan, align: 'center' });
+    this.timerLabel.at(1345, 840, 5);
     this.root.add(this.timerLabel.mesh);
     this.bigText = new Label(900, 120, '', { size: 92, font: TITLE_FONT, align: 'center', color: COLOR.green, glow: 24 });
     this.bigText.at(MID_X, 470, 400);
@@ -191,6 +194,11 @@ export class GameScene implements SceneLike {
       }
     };
     this.root.add(this.btnA.mesh, this.btnB.mesh, this.btnC.mesh, this.btnAbort.mesh);
+
+    this.btnHelp = new Button(190, 38, { label: 'RULES / GLOSSARY', color: COLOR.cyan });
+    this.btnHelp.at(1345, 810, 20);
+    this.btnHelp.onClick = () => this.reference.show();
+    this.root.add(this.btnHelp.mesh, this.reference.root);
 
     this.buildOverlay();
     this.drainEvents();
@@ -262,6 +270,7 @@ export class GameScene implements SceneLike {
   }
 
   private showGameOver() {
+    this.reference.root.visible = false;
     const o = this.game.over!;
     const won = o.winner === this.me, draw = o.winner === -1;
     const color = won ? COLOR.green : draw ? COLOR.amber : COLOR.red;
@@ -416,7 +425,12 @@ export class GameScene implements SceneLike {
     if (e.key === 'm' || e.key === 'M') { sfx.muted = !sfx.muted; return; }
     if (e.key === '-' || e.key === '_') { sfx.volume -= 10; sfx.click(); return; }
     if (e.key === '=' || e.key === '+') { sfx.volume += 10; sfx.click(); return; }
+    if (this.reference.root.visible) {
+      if (e.key === 'Escape') this.reference.root.visible = false;
+      return;
+    }
     if (this.game.over) return;
+    if (e.key === '?' || e.key === 'h' || e.key === 'H') { this.reference.show(); return; }
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       if (this.btnC.opts.enabled !== false && this.btnC.mesh.visible) { sfx.click(); this.primaryAction(); }
@@ -429,7 +443,8 @@ export class GameScene implements SceneLike {
 
   hitTargets(): THREE.Object3D[] {
     if (this.overlay.visible) return this.overlayButtons.map((b) => b.mesh);
-    const out: THREE.Object3D[] = [this.btnA.mesh, this.btnB.mesh, this.btnC.mesh, this.btnAbort.mesh];
+    if (this.reference.root.visible) return this.reference.hitTargets();
+    const out: THREE.Object3D[] = [this.btnA.mesh, this.btnB.mesh, this.btnC.mesh, this.btnAbort.mesh, this.btnHelp.mesh];
     for (const p of this.piles.values()) out.push(p.view.face);
     for (const t of this.views.values()) if (!t.view.leaving && t.view.face.userData.preview) out.push(t.view.face);
     for (const d of this.discardViews) if (d.group.visible) out.push(d.face);

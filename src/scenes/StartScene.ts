@@ -3,6 +3,7 @@ import { sfx } from '../audio/sfx';
 import type { Difficulty } from '../engine/ai';
 import { ALL_CARDS } from '../engine/cards';
 import { CardView } from '../render/cardView';
+import { RULES } from './reference';
 import { VH, VW, type SceneLike, type Stage } from '../render/stage';
 import { Button, COLOR, FONT, Label, Panel, TITLE_FONT, CanvasPlane } from '../render/ui';
 
@@ -22,32 +23,6 @@ const BOOT_LINES = [
   'WARNING: hostile process detected',
   'ready.',
 ];
-
-const RULES = `OBJECTIVE
-  Win by holding the most VP when the game ends — OR crash
-  your opponent's INTEGRITY to 0 for an instant win.
-
-YOUR TURN
-  1. RUN programs (costs 1 CYCLE each; you start with 1).
-  2. Play CURRENCY to earn CR, then ACQUIRE cards from the
-     supply (1 BANDWIDTH per acquisition).
-  3. End turn: everything is discarded, draw 5 new cards.
-
-RESOURCES
-  CYC  cycles — how many programs you can run
-  CR   credits — spend on cards
-  BW   bandwidth — how many cards you can acquire
-  INT  integrity — reach 0 and your system crashes
-
-KEYWORDS
-  EXPLOIT  attacks the opponent. BREACH deals INT damage.
-  DAEMON   while in your hand, auto-blocks enemy exploits.
-  SHIELD   absorbs breach until your next turn.
-  TRASH    removes a card from the game for good.
-
-GAME END
-  When ROOT ACCESS runs out or any 3 supply piles empty.
-  Ties break on remaining integrity.`;
 
 const VOLUME_ROW = 5;
 
