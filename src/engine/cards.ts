@@ -1,0 +1,314 @@
+import type { Ctx } from './game';
+
+export type CardKind = 'currency' | 'data' | 'malware' | 'program';
+
+export interface CardDef {
+  id: string;
+  name: string;
+  cost: number;
+  kind: CardKind;
+  /** Program subtypes. */
+  exploit?: boolean; // attack: targets the opponent
+  daemon?: boolean; // reaction: blocks exploits from hand
+  credits?: number; // currency value
+  vp?: number;
+  /** Rules text shown on the card. Use \n for line breaks. */
+  text: string;
+  flavor?: string;
+  /** Small ASCII glyph used as card art. */
+  art: string[];
+  /** +cycles granted; used by the AI to tell terminals from non-terminals. */
+  givesCycles?: number;
+  effect?: (ctx: Ctx) => Generator<import('./game').Prompt, void, any>;
+}
+
+const defs: CardDef[] = [
+  // ───────────── CURRENCY ─────────────
+  {
+    id: 'bit', name: 'Bit', cost: 0, kind: 'currency', credits: 1,
+    text: '+1 CR', flavor: 'zero or one. mostly one.',
+    art: ['  ___  ', ' | 1 | ', ' |___| '],
+  },
+  {
+    id: 'byte', name: 'Byte', cost: 3, kind: 'currency', credits: 2,
+    text: '+2 CR', flavor: 'eight bits walk into a bar.',
+    art: ['10110010', '01101101', '11010110'],
+  },
+  {
+    id: 'terabyte', name: 'Terabyte', cost: 6, kind: 'currency', credits: 3,
+    text: '+3 CR', flavor: 'cold storage, hot assets.',
+    art: [' ┌─────┐ ', ' │▓▓▓▓▓│ ', ' │▓ TB▓│ ', ' └─────┘ '],
+  },
+  // ───────────── DATA (VP) ─────────────
+  {
+    id: 'fragment', name: 'Data Fragment', cost: 2, kind: 'data', vp: 1,
+    text: '1 VP', flavor: 'a shard of something bigger.',
+    art: ['  /\\  ', ' /  \\ ', ' \\  / ', '  \\/  '],
+  },
+  {
+    id: 'database', name: 'Database', cost: 5, kind: 'data', vp: 3,
+    text: '3 VP', flavor: 'SELECT * FROM secrets;',
+    art: [' .===. ', ' |===| ', ' |===| ', " '===' "],
+  },
+  {
+    id: 'rootaccess', name: 'Root Access', cost: 8, kind: 'data', vp: 6,
+    text: '6 VP\nWhen this pile empties,\nthe game ends.', flavor: '# whoami\nroot',
+    art: ['  ___  ', ' |_#_| ', ' |   | ', ' |___| '],
+  },
+  // ───────────── MALWARE (curse) ─────────────
+  {
+    id: 'malware', name: 'Malware', cost: 0, kind: 'malware', vp: -1,
+    text: '-1 VP\nDoes nothing.\nClogs your deck.', flavor: 'it came with the free screensaver.',
+    art: [' .-"-. ', '/ x x \\', '\\  ^  /', " '-.-' "],
+  },
+  // ───────────── PROGRAMS ─────────────
+  {
+    id: 'fork', name: 'Fork', cost: 3, kind: 'program', givesCycles: 2,
+    text: '+1 Card\n+2 Cycles',
+    flavor: 'pid_t child = fork();',
+    art: ['   |   ', '   |   ', '  / \\  ', ' /   \\ '],
+    *effect(c) { c.draw(1); c.cycles(2); },
+  },
+  {
+    id: 'overclock', name: 'Overclock', cost: 4, kind: 'program',
+    text: '+3 Cards', flavor: 'thermal limits are a suggestion.',
+    art: ['  ^^^  ', ' [CPU] ', ' ||||| ', ' ~~~~~ '],
+    *effect(c) { c.draw(3); },
+  },
+  {
+    id: 'scriptkiddie', name: 'Script Kiddie', cost: 2, kind: 'program', exploit: true, givesCycles: 1,
+    text: '+1 Cycle\n+1 CR\nExploit: Breach 1.',
+    flavor: 'copy. paste. pwn?',
+    art: ['  (o_o) ', ' <)  )> ', '  /  \\  '],
+    *effect(c) {
+      c.cycles(1); c.credits(1);
+      yield* c.exploit(function* (t) { t.breach(1); });
+    },
+  },
+  {
+    id: 'firewall', name: 'Firewall', cost: 2, kind: 'program', daemon: true,
+    text: '+2 Cards\nDaemon: while in your\nhand, blocks Exploits\ntargeting you.',
+    flavor: 'DROP ALL INPUT',
+    art: ['|#|#|#|', '|#|#|#|', '|#|#|#|'],
+    *effect(c) { c.draw(2); },
+  },
+  {
+    id: 'garbagecollector', name: 'Garbage Collector', cost: 2, kind: 'program',
+    text: 'Trash up to 4 cards\nfrom your hand.',
+    flavor: 'free(everything);',
+    art: [' _____ ', ' \\   / ', '  |_|  ', '  [=]  '],
+    *effect(c) {
+      const picks: number[] = yield c.promptHand({ min: 0, max: 4, purpose: 'trash', title: 'TRASH UP TO 4 CARDS' });
+      c.trashFromHand(picks);
+    },
+  },
+  {
+    id: 'defrag', name: 'Defrag', cost: 4, kind: 'program',
+    text: 'Trash a card from your\nhand. Gain a card\ncosting up to 2 more.',
+    flavor: 'rearranging the bits.',
+    art: ['▓▓░▓░░▓', '░▓▓░▓▓░', '▓▓▓▓░░░'],
+    *effect(c) {
+      if (c.me.hand.length === 0) return;
+      const [pick]: number[] = yield c.promptHand({ min: 1, max: 1, purpose: 'trashUpgrade', title: 'TRASH A CARD' });
+      const card = c.me.hand[pick];
+      const cost = c.def(card).cost;
+      c.trashFromHand([pick]);
+      const pile: string | null = yield c.promptSupply({ maxCost: cost + 2, title: `GAIN A CARD COSTING UP TO ${cost + 2}` });
+      if (pile) c.gain(pile, 'discard');
+    },
+  },
+  {
+    id: 'packetsniffer', name: 'Packet Sniffer', cost: 4, kind: 'program', exploit: true,
+    text: '+2 CR\nExploit: opponent\ndiscards down to\n3 cards.',
+    flavor: 'tcpdump -i eth0',
+    art: [' >>--> ', ' [ ? ] ', ' <--<< '],
+    *effect(c) {
+      c.credits(2);
+      yield* c.exploit(function* (t) {
+        const n = t.me.hand.length - 3;
+        if (n <= 0) return;
+        const picks: number[] = yield t.promptHand({ min: n, max: n, purpose: 'discard', title: `DISCARD ${n} CARD${n > 1 ? 'S' : ''}` });
+        t.discardFromHand(picks);
+      });
+    },
+  },
+  {
+    id: 'trojan', name: 'Trojan', cost: 5, kind: 'program', exploit: true,
+    text: '+2 Cards\nExploit: opponent\ngains a Malware.',
+    flavor: 'totally_legit_installer.exe',
+    art: ['  _/\\_ ', ' |o  o|', ' |____|', '  |  | '],
+    *effect(c) {
+      c.draw(2);
+      yield* c.exploit(function* (t) { t.gain('malware', 'discard'); });
+    },
+  },
+  {
+    id: 'ddos', name: 'DDoS', cost: 5, kind: 'program', exploit: true,
+    text: '+1 CR\nExploit: Breach 3.',
+    flavor: '10,000 toasters, one target.',
+    art: ['> > > >', ' > > > ', '> > > >', ' >>>>[]'],
+    *effect(c) {
+      c.credits(1);
+      yield* c.exploit(function* (t) { t.breach(3); });
+    },
+  },
+  {
+    id: 'botnet', name: 'Botnet', cost: 4, kind: 'program', exploit: true, givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\nExploit: Breach 1 per\nBotnet you have in play.',
+    flavor: 'we are legion. we are cheap.',
+    art: ['o-o-o-o', '|\\|/|\\|', 'o-o-o-o'],
+    *effect(c) {
+      c.draw(1); c.cycles(1);
+      const n = c.me.inPlay.filter((x) => x.def === 'botnet').length;
+      yield* c.exploit(function* (t) { t.breach(n); });
+    },
+  },
+  {
+    id: 'serverrack', name: 'Server Rack', cost: 5, kind: 'program', givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\n+1 Bandwidth\n+1 CR',
+    flavor: 'blinkenlights included.',
+    art: ['[=====]', '[= . =]', '[=====]', '[= . =]'],
+    *effect(c) { c.draw(1); c.cycles(1); c.bandwidth(1); c.credits(1); },
+  },
+  {
+    id: 'l2cache', name: 'L2 Cache', cost: 5, kind: 'program', givesCycles: 1,
+    text: '+2 Cards\n+1 Cycle',
+    flavor: 'closer to the core.',
+    art: [' ┌┬┬┬┐ ', ' ├┼┼┼┤ ', ' └┴┴┴┘ '],
+    *effect(c) { c.draw(2); c.cycles(1); },
+  },
+  {
+    id: 'cryptominer', name: 'Crypto Miner', cost: 5, kind: 'program',
+    text: 'Trash a Currency from\nyour hand. Gain a\nCurrency costing up to\n3 more, into your hand.',
+    flavor: 'proof of work. lots of work.',
+    art: ['  ___  ', ' / ₿ \\ ', ' \\___/ ', ' /|||\\ '],
+    *effect(c) {
+      if (!c.me.hand.some((x) => c.def(x).kind === 'currency')) return;
+      const [pick]: number[] = yield c.promptHand({
+        min: 1, max: 1, purpose: 'trashUpgrade', title: 'TRASH A CURRENCY',
+        filter: (d) => d.kind === 'currency',
+      });
+      const cost = c.def(c.me.hand[pick]).cost;
+      c.trashFromHand([pick]);
+      const pile: string | null = yield c.promptSupply({
+        maxCost: cost + 3, title: `GAIN A CURRENCY UP TO ${cost + 3} (TO HAND)`,
+        filter: (d) => d.kind === 'currency',
+      });
+      if (pile) c.gain(pile, 'hand');
+    },
+  },
+  {
+    id: 'backdoor', name: 'Backdoor', cost: 4, kind: 'program', givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\n+1 CR',
+    flavor: 'nobody checks port 31337.',
+    art: [' _____ ', '|  _  |', '| |_|>|', '|_____|'],
+    *effect(c) { c.draw(1); c.cycles(1); c.credits(1); },
+  },
+  {
+    id: 'patch', name: 'Patch', cost: 3, kind: 'program', givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\nRestore 3 Integrity.',
+    flavor: 'v1.0.1 — fixes everything.',
+    art: ['  ___  ', ' |+ +| ', ' | + | ', ' |+_+| '],
+    *effect(c) { c.draw(1); c.cycles(1); c.heal(3); },
+  },
+  {
+    id: 'antivirus', name: 'Antivirus', cost: 3, kind: 'program',
+    text: '+2 Cards\nThen trash all Malware\nfrom your hand.',
+    flavor: 'scanning... 1 threat found.',
+    art: ['  ___  ', ' /   \\ ', '| (+) |', ' \\___/ '],
+    *effect(c) {
+      c.draw(2);
+      const idx = c.me.hand.map((x, i) => (x.def === 'malware' ? i : -1)).filter((i) => i >= 0);
+      if (idx.length) c.trashFromHand(idx);
+    },
+  },
+  {
+    id: 'phishing', name: 'Phishing', cost: 3, kind: 'program',
+    text: '+1 Bandwidth\n+2 CR',
+    flavor: 'Dear valued customer...',
+    art: ['   /   ', '  /    ', ' J  ><>', '       '],
+    *effect(c) { c.bandwidth(1); c.credits(2); },
+  },
+  {
+    id: 'rootkit', name: 'Rootkit', cost: 6, kind: 'program', exploit: true,
+    text: '+2 CR\nExploit: Breach 2.\nOpponent gains a\nMalware.',
+    flavor: 'it was here before you were.',
+    art: ['  ___  ', ' (o o) ', '/|_#_|\\', ' // \\\\ '],
+    *effect(c) {
+      c.credits(2);
+      yield* c.exploit(function* (t) { t.breach(2); t.gain('malware', 'discard'); });
+    },
+  },
+  {
+    id: 'zeroday', name: 'Zero-Day', cost: 5, kind: 'program', exploit: true,
+    text: 'Exploit: Breach 6.\nTrash this card.',
+    flavor: 'works exactly once.',
+    art: ['  ___  ', ' | 0 | ', ' |DAY| ', ' |___| '],
+    *effect(c) {
+      yield* c.exploit(function* (t) { t.breach(6); });
+      c.trashSelf();
+    },
+  },
+  {
+    id: 'honeypot', name: 'Honeypot', cost: 4, kind: 'program', daemon: true,
+    text: '+2 CR\nDaemon: while in hand,\nblocks Exploits and\nBreaches attacker 2.',
+    flavor: 'come on in. it is warm.',
+    art: ['  ___  ', ' (___) ', ' |HNY| ', ' |___| '],
+    *effect(c) { c.credits(2); },
+  },
+  {
+    id: 'compiler', name: 'Compiler', cost: 3, kind: 'program',
+    text: 'Gain a card costing\nup to 4.',
+    flavor: 'gcc -O3 ./dreams.c',
+    art: ['{ } { }', ' \\ | / ', '  [*]  ', '   |   '],
+    *effect(c) {
+      const pile: string | null = yield c.promptSupply({ maxCost: 4, title: 'GAIN A CARD COSTING UP TO 4' });
+      if (pile) c.gain(pile, 'discard');
+    },
+  },
+  {
+    id: 'recursion', name: 'Recursion', cost: 4, kind: 'program',
+    text: 'Choose a Program in\nyour hand.\nRun it twice.',
+    flavor: 'see: Recursion.',
+    art: [' .--.  ', '(  _ ) ', ' `( `) ', '   `-  '],
+    *effect(c) {
+      if (!c.me.hand.some((x) => c.def(x).kind === 'program')) return;
+      const [pick]: number[] = yield c.promptHand({
+        min: 1, max: 1, purpose: 'play', title: 'CHOOSE A PROGRAM TO RUN TWICE',
+        filter: (d) => d.kind === 'program',
+      });
+      yield* c.runTwice(pick);
+    },
+  },
+  {
+    id: 'encryption', name: 'Encryption', cost: 4, kind: 'program', givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\n+3 Shield (absorbs\nBreach until your\nnext turn).',
+    flavor: 'AES-256. good luck.',
+    art: ['  .-.  ', ' |   | ', '[=====]', '[ KEY ]'],
+    *effect(c) { c.draw(1); c.cycles(1); c.shield(3); },
+  },
+];
+
+export const CARDS: Record<string, CardDef> = Object.fromEntries(defs.map((d) => [d.id, d]));
+export const ALL_CARDS = defs;
+export const BASIC_PILES = ['bit', 'byte', 'terabyte', 'fragment', 'database', 'rootaccess', 'malware'];
+export const KINGDOM_POOL = defs.filter((d) => d.kind === 'program').map((d) => d.id);
+
+export function typeLine(d: CardDef): string {
+  if (d.kind === 'currency') return 'CURRENCY';
+  if (d.kind === 'data') return 'DATA';
+  if (d.kind === 'malware') return 'MALWARE';
+  if (d.exploit) return 'PROGRAM · EXPLOIT';
+  if (d.daemon) return 'PROGRAM · DAEMON';
+  return 'PROGRAM';
+}
+
+/** Neon accent color per card type. */
+export function cardColor(d: CardDef): string {
+  if (d.kind === 'currency') return '#ffc933';
+  if (d.kind === 'data') return '#33e0ff';
+  if (d.kind === 'malware') return '#ff3366';
+  if (d.exploit) return '#ff6a2a';
+  if (d.daemon) return '#5a8cff';
+  return '#33ff88';
+}
