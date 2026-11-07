@@ -10,6 +10,7 @@ import { CardView } from '../render/cardView';
 import { VH, VW, type SceneLike, type Stage } from '../render/stage';
 import { Button, COLOR, CanvasPlane, FONT, Label, TITLE_FONT, drawFrame, hexA, wrap } from '../render/ui';
 import { DIFFICULTIES } from './StartScene';
+import { MatchTimer } from './matchTimer';
 
 // ───────────────────────── layout (virtual px, y-up) ─────────────────────────
 const MID_X = 707;
@@ -86,6 +87,8 @@ export class GameScene implements SceneLike {
   private logKey = '';
   private banner: Label;
   private info: Label;
+  private timer = new MatchTimer();
+  private timerLabel: Label;
   private preview: CardView;
   private previewFrame: CanvasPlane;
   private bigText: Label;
@@ -142,6 +145,9 @@ export class GameScene implements SceneLike {
     this.banner.at(L.banner.x, L.banner.y, 6);
     this.info = new Label(330, 30, '', { size: 14, color: COLOR.mid, glow: 0 });
     this.info.at(1265, 866, 5);
+    this.timerLabel = new Label(200, 30, '', { size: 16, color: COLOR.cyan, align: 'center' });
+    this.timerLabel.at(975, 866, 5);
+    this.root.add(this.timerLabel.mesh);
     this.bigText = new Label(900, 120, '', { size: 92, font: TITLE_FONT, align: 'center', color: COLOR.green, glow: 24 });
     this.bigText.at(MID_X, 470, 400);
     this.bigText.mat.opacity = 0;
@@ -815,6 +821,7 @@ export class GameScene implements SceneLike {
     }
     this.banner.set(text, { color: bcol });
 
+    this.timerLabel.set(`TIME ${this.timer.read(!!g.over)}`);
     this.info.set(this.net
       ? `TURN ${Math.ceil(g.turn / 2)} · LAN vs ${them}`
       : `TURN ${Math.ceil(g.turn / 2)} · GHOST: ${DIFFICULTIES.find((d) => d.id === this.difficulty)?.name}`);

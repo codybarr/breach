@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] Add a game timer to the playing screen.
+- [x] Add a game timer to the playing screen.
 - [ ] Allow players to read the rules and view a glossary during the game.
 - [ ] Don't let players accidentally buy Malware cards
 - [ ] Game is too long, suggest ways to make games shorter
