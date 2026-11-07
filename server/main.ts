@@ -39,7 +39,7 @@ Bun.serve<{ conn: Conn | null }>({
   websocket: {
     maxPayloadLength: 64 * 1024,
     open(ws) {
-      const conn: Conn = { send: (m) => ws.send(JSON.stringify(m)) };
+      const conn: Conn = { send: (m) => ws.send(JSON.stringify(m)), close: () => ws.close(4000, 'idle') };
       ws.data.conn = conn;
       lobby.connect(conn);
     },

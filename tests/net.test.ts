@@ -179,6 +179,47 @@ describe('LAN relay', () => {
     expect(lobby.roomCount).toBe(0);
   });
 
+  it('answers pings with how many actions the match has, so clients can spot a gap', () => {
+    const { lobby, host, guest } = setup();
+    const watcher = new FakeClient();
+    lobby.connect(watcher);
+    lobby.message(watcher, { t: 'ping' });
+    expect(watcher.last('pong')).toEqual({ t: 'pong', n: null });
+    const mover = host.game!.current === host.seat ? host : guest;
+    lobby.message(mover, { t: 'act', action: { k: 'currency' } });
+    lobby.message(guest, { t: 'ping' });
+    expect(guest.last('pong')).toEqual({ t: 'pong', n: 1 });
+  });
+
+  it('hangs up a silent (half-open) connection and starts the reconnect countdown', () => {
+    const t = manualTimers();
+    let now = 0;
+    const lobby = new Lobby({ graceMs: 60_000, idleMs: 20_000, timers: t.timers, now: () => now });
+    let closed = 0;
+    const host = new FakeClient();
+    const guest = Object.assign(new FakeClient(), { close: () => { closed++; } });
+    lobby.connect(host); lobby.connect(guest);
+    lobby.message(host, { t: 'host', name: 'neo' });
+    lobby.message(guest, { t: 'join', room: host.last('hosted')!.room, name: 'trinity' });
+
+    // Host keeps pinging; the guest's link silently dies.
+    for (now = 5_000; now <= 25_000; now += 5_000) {
+      lobby.message(host, { t: 'ping' });
+      t.fireAll();
+    }
+    expect(closed).toBe(1);
+    expect(host.last('peer')).toEqual({ t: 'peer', up: false, graceMs: 60_000 });
+    // Late frames from the dead socket are ignored...
+    lobby.message(guest, { t: 'act', action: { k: 'end' } });
+    expect(host.inbox.filter((m) => m.t === 'act')).toHaveLength(0);
+    // ...and the guest's reconnect reclaims the seat.
+    const back = new FakeClient();
+    lobby.connect(back);
+    lobby.message(back, { t: 'rejoin', room: guest.start!.room, token: guest.start!.token });
+    expect(back.start!.seat).toBe(1);
+    expect(host.last('peer')).toEqual({ t: 'peer', up: true });
+  });
+
   it('isAction rejects junk', () => {
     expect(isAction({ k: 'play', card: 3 })).toBe(true);
     expect(isAction({ k: 'play', card: '3' })).toBe(false);

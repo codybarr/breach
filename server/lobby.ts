@@ -1,10 +1,12 @@
 import { Game } from '../src/engine/game';
 import { applyAction, isAction, type SeatedAction } from '../src/net/actions';
-import { GRACE_MS, cleanName, type ClientMsg, type MatchStart, type RoomInfo, type ServerMsg } from '../src/net/protocol';
+import { GRACE_MS, SERVER_IDLE_MS, cleanName, type ClientMsg, type MatchStart, type RoomInfo, type ServerMsg } from '../src/net/protocol';
 
 /** One connected browser tab. */
 export interface Conn {
   send(msg: ServerMsg): void;
+  /** Hang up the underlying socket. The transport must still (or already) call Lobby.disconnect. */
+  close?(): void;
 }
 
 export interface Timers {
@@ -42,24 +44,38 @@ export class Lobby {
   private rooms = new Map<string, Room>();
   private seatOf = new Map<Conn, { room: Room; seat: number }>();
   private browsers = new Set<Conn>();
+  /** Last time we heard from each open connection, for dropping half-open sockets. */
+  private lastSeen = new Map<Conn, number>();
+  private sweepTimer: unknown = null;
   private graceMs: number;
+  private idleMs: number;
   private timers: Timers;
   private now: () => number;
 
-  constructor(opts: { graceMs?: number; timers?: Timers; now?: () => number } = {}) {
+  constructor(opts: { graceMs?: number; idleMs?: number; timers?: Timers; now?: () => number } = {}) {
     this.graceMs = opts.graceMs ?? GRACE_MS;
+    this.idleMs = opts.idleMs ?? SERVER_IDLE_MS;
     this.timers = opts.timers ?? realTimers;
     this.now = opts.now ?? Date.now;
   }
 
   connect(conn: Conn) {
     this.browsers.add(conn);
+    this.lastSeen.set(conn, this.now());
+    if (this.sweepTimer === null) this.scheduleSweep();
   }
 
   message(conn: Conn, raw: unknown) {
+    if (!this.lastSeen.has(conn)) return; // never connected, or already dropped as idle
+    this.lastSeen.set(conn, this.now());
     if (!raw || typeof raw !== 'object') return;
     const msg = raw as ClientMsg;
     switch (msg.t) {
+      case 'ping': {
+        const at = this.seatOf.get(conn);
+        conn.send({ t: 'pong', n: at?.room.game ? at.room.log.length : null });
+        break;
+      }
       case 'list': this.browsers.add(conn); conn.send(this.roomList()); break;
       case 'host': this.host(conn, cleanName(msg.name)); break;
       case 'join': this.join(conn, String(msg.room), cleanName(msg.name)); break;
@@ -70,6 +86,7 @@ export class Lobby {
   }
 
   disconnect(conn: Conn) {
+    this.lastSeen.delete(conn);
     this.browsers.delete(conn);
     const at = this.seatOf.get(conn);
     if (!at) return;
@@ -89,6 +106,28 @@ export class Lobby {
     room.graceEnds[seat] = this.now() + this.graceMs;
     room.graceTimers[seat] = this.timers.set(() => this.timeout(room, seat), this.graceMs);
     room.conns[1 - seat]?.send({ t: 'peer', up: false, graceMs: this.graceMs });
+  }
+
+  /**
+   * A socket can die without either end being told (Wi-Fi drop, phone asleep):
+   * the server would keep the player "connected" and the match stalls with
+   * each side waiting on the other. Clients ping every few seconds, so a
+   * connection that has gone quiet is dead — hang it up and start the
+   * reconnect grace period like any other disconnect.
+   */
+  private scheduleSweep() {
+    this.sweepTimer = this.timers.set(() => this.sweep(), Math.max(1000, this.idleMs / 4));
+  }
+
+  private sweep() {
+    this.sweepTimer = null;
+    const cutoff = this.now() - this.idleMs;
+    for (const [conn, seen] of [...this.lastSeen]) {
+      if (seen >= cutoff) continue;
+      this.disconnect(conn);
+      conn.close?.();
+    }
+    if (this.lastSeen.size) this.scheduleSweep();
   }
 
   /** For tests / logging. */

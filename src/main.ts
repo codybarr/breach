@@ -48,6 +48,7 @@ function resumeLanMatch(onResume: (c: NetClient, m: MatchStart) => void) {
   const giveUp = setTimeout(() => client.close(), 4000);
   client.onOpen = () => client.send({ t: 'rejoin', room: s.room, token: s.token });
   client.onMessage = (m) => {
+    if (m.t !== 'start' && m.t !== 'error') return;
     clearTimeout(giveUp);
     if (m.t === 'start' && m.room === s.room) {
       client.onMessage = client.onOpen = null;

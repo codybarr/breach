@@ -41,12 +41,21 @@ export class LobbyDO extends DurableObject<Env> {
     const { 0: client, 1: ws } = new WebSocketPair();
     ws.accept();
 
+    let gone = false;
     const conn: Conn = {
       send: (m) => {
         try {
           ws.send(JSON.stringify(m));
         } catch {
           /* socket already closing */
+        }
+      },
+      close: () => {
+        gone = true; // the lobby already dropped us
+        try {
+          ws.close(4000, 'idle');
+        } catch {
+          /* already closed */
         }
       },
     };
@@ -62,7 +71,6 @@ export class LobbyDO extends DurableObject<Env> {
       }
       this.lobby.message(conn, msg);
     });
-    let gone = false;
     const drop = () => {
       if (gone) return;
       gone = true;

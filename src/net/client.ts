@@ -1,4 +1,4 @@
-import type { ClientMsg, ServerMsg } from './protocol';
+import { CLIENT_STALE_MS, PING_MS, type ClientMsg, type ServerMsg } from './protocol';
 
 const SESSION_KEY = 'breach.session';
 const HANDLE_KEY = 'breach.handle';
@@ -43,9 +43,17 @@ export const handle = {
   },
 };
 
+/** A tab coming back to the foreground (or the network returning) gets this long to hear from the server. */
+const PROBE_MS = 3_000;
+
 /**
  * WebSocket to the LAN relay with automatic reconnect. Scenes take turns
  * owning it by assigning `onMessage` / `onOpen` / `onStatus`.
+ *
+ * A socket can die without a close event (Wi-Fi drop, laptop lid, phone
+ * screen off), leaving `up` true while nothing gets through. So we ping on a
+ * timer and treat a server that has gone quiet as gone: drop the socket and
+ * reconnect, which makes the owning scene rejoin and resync.
  */
 export class NetClient {
   up = false;
@@ -59,9 +67,19 @@ export class NetClient {
   private ws: WebSocket | null = null;
   private closed = false;
   private retry: ReturnType<typeof setTimeout> | null = null;
+  private tick: ReturnType<typeof setInterval>;
+  /** When the current socket was created / last delivered anything / was last pinged. */
+  private openedAt = 0;
+  private lastRx = 0;
+  private lastPing = 0;
+  /** If set, the server must say something by then or the socket is presumed dead. */
+  private probeBy = 0;
 
   constructor(private url = defaultUrl()) {
     this.open();
+    this.tick = setInterval(() => this.check(), 1000);
+    addEventListener('visibilitychange', this.probe);
+    addEventListener('online', this.probe);
   }
 
   send(m: ClientMsg) {
@@ -71,20 +89,71 @@ export class NetClient {
   close() {
     this.closed = true;
     if (this.retry) clearTimeout(this.retry);
+    clearInterval(this.tick);
+    removeEventListener('visibilitychange', this.probe);
+    removeEventListener('online', this.probe);
     this.ws?.close();
     this.onMessage = this.onOpen = this.onStatus = null;
+  }
+
+  /** Ask the server for a sign of life now (e.g. the tab was asleep and the socket may be long dead). */
+  private probe = () => {
+    if (document.visibilityState === 'hidden' || this.ws?.readyState !== WebSocket.OPEN) return;
+    this.probeBy = performance.now() + PROBE_MS;
+    this.ping();
+  };
+
+  private ping() {
+    this.lastPing = performance.now();
+    this.send({ t: 'ping' });
+  }
+
+  private check() {
+    const ws = this.ws;
+    if (!ws || this.closed) return;
+    const now = performance.now();
+    if (ws.readyState === WebSocket.CONNECTING) {
+      if (now - this.openedAt > CLIENT_STALE_MS) this.drop(); // handshake stuck on a dead network
+      return;
+    }
+    if (ws.readyState !== WebSocket.OPEN) return;
+    if (now - this.lastRx > CLIENT_STALE_MS || (this.probeBy && now > this.probeBy)) {
+      this.drop();
+      return;
+    }
+    if (now - this.lastPing >= PING_MS) this.ping();
+  }
+
+  /** Abandon the current socket without waiting for a close event that may never come, and reconnect. */
+  private drop() {
+    const ws = this.ws;
+    this.ws = null; // its late events are ignored from here on
+    if (ws) {
+      ws.onopen = ws.onmessage = ws.onclose = null;
+      try { ws.close(); } catch { /* ignore */ }
+    }
+    const was = this.up;
+    this.up = false;
+    if (was) this.onStatus?.(false);
+    if (this.retry) clearTimeout(this.retry);
+    if (!this.closed) this.retry = setTimeout(() => this.open(), 250);
   }
 
   private open() {
     if (this.closed) return;
     const ws = new WebSocket(this.url);
     this.ws = ws;
+    this.openedAt = performance.now();
+    this.probeBy = 0;
     ws.onopen = () => {
+      this.lastRx = performance.now();
       this.up = this.everUp = true;
       this.onStatus?.(true);
       this.onOpen?.();
     };
     ws.onmessage = (e) => {
+      this.lastRx = performance.now();
+      this.probeBy = 0;
       let m: ServerMsg;
       try {
         m = JSON.parse(String(e.data));

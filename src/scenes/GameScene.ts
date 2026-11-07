@@ -55,6 +55,9 @@ export interface GameSceneOpts {
 interface NetState {
   client: NetClient;
   room: string;
+  token: string;
+  /** performance.now() of the last resync request, to avoid spamming them. */
+  lastResync: number;
   /** Actions applied so far (server log index). */
   applied: number;
   peerUp: boolean;
@@ -120,7 +123,7 @@ export class GameScene implements SceneLike {
       this.them = 1 - st.seat;
       this.game = new Game({ seed: st.seed, names: st.names, aiFlags: [false, false] });
       this.ai = null;
-      this.net = { client: opts.net.client, room: st.room, applied: 0, peerUp: st.peerUp, peerDeadline: 0 };
+      this.net = { client: opts.net.client, room: st.room, token: st.token, lastResync: 0, applied: 0, peerUp: st.peerUp, peerDeadline: 0 };
       this.syncFromStart(st);
       // Replayed history shouldn't fire a burst of sounds and floaters.
       this.game.events.length = 0;
@@ -329,9 +332,14 @@ export class GameScene implements SceneLike {
     const net = this.net!;
     switch (m.t) {
       case 'act':
-        if (m.n !== net.applied) return; // duplicate or gap — a rejoin will resync us
+        if (m.n < net.applied) return; // duplicate (e.g. replayed by a rejoin we already applied)
+        if (m.n > net.applied) { this.resync(); return; } // we missed some — fetch the full log
         applyAction(this.game, m.seat, m.action);
         net.applied++;
+        break;
+      case 'pong':
+        // The server has moves we never got, or no longer has us seated: rejoin to catch up.
+        if (!this.game.over && (m.n === null || m.n > net.applied)) this.resync();
         break;
       case 'start':
         if (m.room === net.room) this.syncFromStart(m);
@@ -346,6 +354,15 @@ export class GameScene implements SceneLike {
         }
         break;
     }
+  }
+
+  /** Ask the server for the whole match again; the 'start' reply goes through syncFromStart. */
+  private resync() {
+    const net = this.net!;
+    const now = performance.now();
+    if (now - net.lastResync < 2000) return;
+    net.lastResync = now;
+    net.client.send({ t: 'rejoin', room: net.room, token: net.token });
   }
 
   /** Catch up on any actions we missed (initial load, or after a reconnect). */
