@@ -1094,6 +1094,102 @@ const PADLOCK: SpriteDef = {
   },
 };
 
+/**
+ * Overclock: a CPU cooking itself, its die glowing white-hot through amber and
+ * red, pins glowing with it. Heat shimmers up the sides and the thermometer is
+ * pinned. Thermal limits are a suggestion.
+ */
+const CPU: SpriteDef = {
+  rows: [
+    '....G.G.f.f.f.f.f.G.G....',
+    '....G.G.f.f.f.f.f.G.G....',
+    '..ooooooooooooooooooooo..',
+    '..oGGGGGGGGGGGGGGGGGGGo..',
+    'GGoGwgggggggggggggggGgoGG',
+    '..oGgorrrrrrrrrrrrroggo..',
+    'GGoGgorrrrrrrrrrrrroggoGG',
+    '..oGgorrfffffffffrroggo..',
+    'ffoGgorrfaaaaaaafrroggoff',
+    '..oGgorrfaaaaaaafrroggo..',
+    'ffoGgorrfaawwwaafrroggoff',
+    '..oGgorrfaawwwaafrroggo..',
+    'ffoGgorrfaawwwaafrroggoff',
+    '..oGgorrfaaaaaaafrroggo..',
+    'ffoGgorrfaaaaaaafrroggoff',
+    '..oGgorrfffffffffrroggo..',
+    'GGoGgorrrrrrrrrrrrroggoGG',
+    '..oGgorrrrrrrrrrrrroggo..',
+    'GGoGGgggggggggggggggGgoGG',
+    '..oGggggggggggggggggggo..',
+    '..ooooooooooooooooooooo..',
+    '....G.G.f.f.f.f.f.G.G....',
+    '....G.G.f.f.f.f.f.G.G....',
+  ],
+  decorate({ gw, gh, sw, nx, rnd, lit }) {
+    // Shimmer: wavy columns of heat rising from the bottom, cooling as they climb.
+    const heat = ['#ff3366', '#ff6a2a', '#ffc933'];
+    for (const x0 of [2, 6, nx - 4, nx + sw + 3]) {
+      const phase = rnd() * 6;
+      for (let gy = gh - 1; gy >= 0; gy -= 1) {
+        if ((gy + Math.floor(phase)) % 3 === 0) continue;
+        const t = 1 - gy / gh;
+        lit(x0 + Math.round(Math.sin(gy * 0.55 + phase)), gy, heat[Math.min(2, Math.floor(t * 3))], 0.65 - t * 0.5);
+      }
+    }
+    // Thermometer, maxed out.
+    const tx = gw - 5;
+    for (let gy = 1; gy < gh - 4; gy++) { lit(tx - 1, gy, '#5d676f', 0.8); lit(tx + 1, gy, '#5d676f', 0.8); lit(tx, gy, '#ff3366', gy < 3 ? 0.5 : 0.95); }
+    lit(tx, 0, '#5d676f', 0.8);
+    for (let dy = 0; dy < 3; dy++) for (let dx = -1; dx <= 1; dx++) lit(tx + dx, gh - 4 + dy, '#ff3366', 0.95);
+    for (let gy = 3; gy < gh - 6; gy += 3) lit(tx - 2, gy, '#5d676f', 0.6);
+  },
+};
+
+/**
+ * Malware: a fat bug, x-ed out eyes, spotted shell, crawling out of a glitch.
+ * It came with the free screensaver.
+ */
+const BUG: SpriteDef = {
+  shadeRight: true,
+  rows: [
+    '....ommo.........ommo....',
+    '.....oomo.......omoo.....',
+    '.......omooooooomo.......',
+    '.......oommmmmmmoo.......',
+    '......owmwmmmmmwmwo......',
+    '......omwmmmmmmmwmo......',
+    '.....omwmwmmmmmwmwmo.....',
+    '......ommmmmmmmmmmo......',
+    '.o.....ommmmommmmo.....o.',
+    'omo...ommlllolllmmo...omo',
+    'ommo.omllhhlollhhlmo.ommo',
+    '.oomomllhlllollllhlmomoo.',
+    '...oomlhllllolllllhmoo...',
+    '.ooomllhllnlolllllhlmooo.',
+    'ommmmlllllllollnnlllmmmmo',
+    'omoomllnnlllolllllllmoomo',
+    '.o.omlllllnlolllllllmo.o.',
+    '.oommlllllllollnlnllmmoo.',
+    'ommoomlllnnlollllllmoommo',
+    'omo..omlllllolnlllmo..omo',
+    '.o....omllllollllmo....o.',
+    '.......ommllollmmo.......',
+    '........ooooooooo........',
+  ],
+  // Glitch streaks and dead pixels scattered around it.
+  decorate({ gw, gh, rnd, pal, lit }) {
+    for (let i = 0; i < 12; i++) {
+      const x = Math.floor(rnd() * gw), y = Math.floor(rnd() * gh), len = 2 + Math.floor(rnd() * 6);
+      const c = rnd() < 0.35 ? pal.l : COLOR.cyan, a = 0.2 + rnd() * 0.35;
+      for (let k = 0; k < len; k++) lit(x + k, y, c, a);
+    }
+    for (let i = 0; i < 6; i++) {
+      const x = Math.floor(rnd() * gw), y = Math.floor(rnd() * gh);
+      for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) lit(x + dx, y + dy, COLOR.white, 0.35);
+    }
+  },
+};
+
 type SpriteDrawer = (ctx: CanvasRenderingContext2D, rnd: () => number, ax: number, ay: number, aw: number, ah: number, col: string) => void;
 
 const draw = (def: SpriteDef): SpriteDrawer => (ctx, rnd, ax, ay, aw, ah, col) => drawSprite(ctx, rnd, ax, ay, aw, ah, col, def);
@@ -1122,4 +1218,6 @@ export const PIXEL_SPRITES: Record<PixelSprite, SpriteDrawer> = {
   gears: draw(GEARS),
   screens: draw(SCREENS),
   padlock: draw(PADLOCK),
+  cpu: draw(CPU),
+  bug: draw(BUG),
 };

@@ -7,7 +7,7 @@ export type DotModel = 'cpu' | 'honeypot';
 
 /** Flat pixel-art sprites available as card art (drawn in render/pixelArt). */
 export type PixelSprite = 'nose' | 'kiddie' | 'horse' | 'toaster' | 'bot' | 'skull' | 'calendar' | 'honeypot' | 'firewall'
-  | 'fork' | 'trash' | 'hdd' | 'rack' | 'cache' | 'cart' | 'door' | 'bandaid' | 'magnifier' | 'hook' | 'gears' | 'screens' | 'padlock';
+  | 'fork' | 'trash' | 'hdd' | 'rack' | 'cache' | 'cart' | 'door' | 'bandaid' | 'magnifier' | 'hook' | 'gears' | 'screens' | 'padlock' | 'cpu' | 'bug';
 
 export interface CardDef {
   id: string;
@@ -79,7 +79,7 @@ const defs: CardDef[] = [
   {
     id: 'malware', name: 'Malware', cost: 0, kind: 'malware', vp: -1,
     text: '-1 VP\nDoes nothing.\nClogs your deck.', flavor: 'it came with the free screensaver.',
-    art: [' .-"-. ', '/ x x \\', '\\  ^  /', " '-.-' "],
+    art: [' .-"-. ', '/ x x \\', '\\  ^  /', " '-.-' "], sprite: 'bug',
   },
   // ───────────── PROGRAMS ─────────────
   {
@@ -92,7 +92,7 @@ const defs: CardDef[] = [
   {
     id: 'overclock', name: 'Overclock', cost: 4, kind: 'program',
     text: '+3 Cards', flavor: 'thermal limits are a suggestion.',
-    art: ['  ^^^  ', ' [CPU] ', ' ||||| ', ' ~~~~~ '], model: 'cpu',
+    art: ['  ^^^  ', ' [CPU] ', ' ||||| ', ' ~~~~~ '], sprite: 'cpu',
     *effect(c) { c.draw(3); },
   },
   {
