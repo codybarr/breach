@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { compact } from '../mobile';
 import { VH, VW } from '../render/stage';
 import { Button, CanvasPlane, COLOR, FONT, Panel } from '../render/ui';
 import { GLOSSARY, RULES } from './reference';
@@ -15,7 +16,7 @@ export class ReferenceOverlay {
       new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.88, depthTest: false, depthWrite: false }));
     shade.position.set(VW / 2, VH / 2, 500);
     shade.renderOrder = 500;
-    const panel = new Panel(900, 820, COLOR.cyan, ' REFERENCE ');
+    const panel = new Panel(900, compact ? 760 : 820, COLOR.cyan, ' REFERENCE ');
     panel.at(800, 450, 501);
     this.text.at(800, 430, 502);
     this.root.add(shade, panel.mesh, this.text.mesh);

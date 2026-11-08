@@ -12,7 +12,9 @@
  * - In portrait, a dismissible overlay asks you to rotate.
  */
 
-const touch = matchMedia('(pointer: coarse)').matches;
+export const touch = matchMedia('(pointer: coarse)').matches;
+/** A phone: small enough that the game swaps to its enlarged touch layout. Tablets keep the full one. */
+export const compact = touch && Math.min(screen.width, screen.height) <= 500;
 const landscapeMq = matchMedia('(orientation: landscape)');
 const installed =
   matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches ||

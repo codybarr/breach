@@ -151,6 +151,12 @@ export interface ButtonOpts {
   color?: string;
   enabled?: boolean;
   hotkey?: string;
+  fontSize?: number;
+  disabledColor?: string;
+  /** Background when not hovered; defaults to slightly see-through. */
+  fill?: string;
+  /** Smaller second line under the label. */
+  sub?: string;
 }
 
 export class Button extends CanvasPlane {
@@ -185,19 +191,25 @@ export class Button extends CanvasPlane {
     const key = JSON.stringify(o) + this.hovered;
     if (key === this.key) return;
     this.key = key;
-    const color = enabled ? o.color ?? COLOR.green : COLOR.dim;
+    const color = enabled ? o.color ?? COLOR.green : o.disabledColor ?? COLOR.dim;
     const hot = this.hovered && enabled;
     this.redraw((ctx, w, h) => {
       drawFrame(ctx, 4, 4, w - 8, h - 8, color, {
-        fill: hot ? hexA(color, 0.28) : 'rgba(2,12,8,0.85)', glow: hot ? 16 : 6,
+        fill: hot ? hexA(color, 0.28) : o.fill ?? 'rgba(2,12,8,0.85)', glow: hot ? 16 : 6,
       });
-      ctx.font = `${Math.min(20, h * 0.42)}px ${FONT}`;
+      ctx.font = `${o.fontSize ?? Math.min(20, h * 0.42)}px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = hot ? COLOR.white : color;
       ctx.shadowColor = color;
       ctx.shadowBlur = hot ? 14 : 6;
-      ctx.fillText(o.label, w / 2, h / 2 + 1);
+      ctx.fillText(o.label, w / 2, h / 2 + 1 - (o.sub ? h * 0.15 : 0));
+      if (o.sub) {
+        ctx.font = `${Math.round(h * 0.21)}px ${FONT}`;
+        ctx.globalAlpha = 0.75;
+        ctx.fillText(o.sub, w / 2, h * 0.73);
+        ctx.globalAlpha = 1;
+      }
       if (o.hotkey) {
         ctx.font = `11px ${FONT}`;
         ctx.textAlign = 'right';

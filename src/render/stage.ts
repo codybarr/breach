@@ -11,11 +11,16 @@ import { CRT_CURVE, CrtShader } from './crt';
 export const VW = 1600;
 export const VH = 900;
 
+/** Touch moving further than this (CSS px) counts as a drag, not a tap. */
+const TAP_SLOP_PX = 12;
+
 export interface SceneLike {
   root: THREE.Object3D;
   update(dt: number, t: number): void;
   /** Objects that can be hovered/clicked. Each may carry userData.onClick / userData.onHover. */
   hitTargets(): THREE.Object3D[];
+  /** Virtual height (centred on VH / 2) this scene must keep on screen. Less than VH zooms in on wide screens. */
+  fitHeight?: number;
   onKey?(e: KeyboardEvent): void;
   dispose?(): void;
 }
@@ -37,6 +42,10 @@ export class Stage {
   private hovered: THREE.Object3D | null = null;
   private clock = new THREE.Clock();
   private glitch = 0;
+  /** The finger currently down, if any. */
+  private press: { id: number; target: THREE.Object3D | null; wasOpen: THREE.Object3D | null; x: number; y: number; moved: boolean } | null = null;
+  /** The card a touch selected. It stays selected after the finger lifts. */
+  private touchInspected: THREE.Object3D | null = null;
 
   constructor(parent: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -63,14 +72,41 @@ export class Stage {
     this.resize();
 
     const el = this.renderer.domElement;
-    el.addEventListener('pointermove', (e) => this.setPointer(e));
+    el.addEventListener('pointermove', (e) => {
+      this.setPointer(e);
+      const p = this.press;
+      if (p?.id !== e.pointerId) return;
+      if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > TAP_SLOP_PX) p.moved = true;
+      if (!p.moved) return;
+      this.updateHover();
+      if (this.hovered?.userData.preview) this.touchInspected = this.hovered;
+    });
     el.addEventListener('pointerdown', (e) => {
       this.setPointer(e);
       this.updateHover();
+      if (e.pointerType === 'touch') {
+        if (!e.isPrimary) return;
+        this.press = { id: e.pointerId, target: this.hovered, wasOpen: this.touchInspected, x: e.clientX, y: e.clientY, moved: false };
+        if (this.hovered?.userData.preview) this.touchInspected = this.hovered;
+        return;
+      }
       const fn = this.hovered?.userData.onClick;
       if (fn && e.button === 0) fn();
     });
+    el.addEventListener('pointerup', (e) => {
+      if (this.press?.id !== e.pointerId) return;
+      this.setPointer(e);
+      this.updateHover();
+      this.releasePress();
+    });
+    el.addEventListener('pointercancel', (e) => {
+      if (this.press?.id !== e.pointerId) return;
+      this.press = null;
+      this.ndc.set(-10, -10);
+    });
     el.addEventListener('pointerleave', () => this.ndc.set(-10, -10));
+    // Android raises a context menu on long-press, which would interrupt the touch.
+    el.addEventListener('contextmenu', (e) => { if (this.press) e.preventDefault(); });
     window.addEventListener('keydown', (e) => this.current?.onKey?.(e));
   }
 
@@ -80,8 +116,10 @@ export class Stage {
       this.current.dispose?.();
     }
     this.hovered = null;
+    this.touchInspected = null;
     this.current = s;
     this.scene.add(s.root);
+    this.fitCamera();
   }
 
   /** Kick the CRT glitch effect (0..1). */
@@ -93,8 +131,15 @@ export class Stage {
     const w = window.innerWidth, h = window.innerHeight;
     this.renderer.setSize(w, h);
     this.composer.setSize(w, h);
+    this.fitCamera();
+    const pr = this.renderer.getPixelRatio();
+    this.crt.uniforms.uRes.value.set(w * pr, h * pr);
+  }
+
+  private fitCamera() {
+    const w = window.innerWidth, h = window.innerHeight;
     // Fit the virtual area inside the window, extending the visible world on the longer axis.
-    const scale = Math.min(w / VW, h / VH);
+    const scale = Math.min(w / VW, h / (this.current?.fitHeight ?? VH));
     const ww = w / scale, wh = h / scale;
     this.camera.left = VW / 2 - ww / 2;
     this.camera.right = VW / 2 + ww / 2;
@@ -102,8 +147,33 @@ export class Stage {
     this.camera.top = VH / 2 + wh / 2;
     this.camera.updateProjectionMatrix();
     this.bg.resize(this.camera);
-    const pr = this.renderer.getPixelRatio();
-    this.crt.uniforms.uRes.value.set(w * pr, h * pr);
+  }
+
+  /**
+   * Touch selects before it acts: the first tap on a card opens it, a second tap on
+   * that same card activates it, and tapping nothing closes it. Dragging flips between
+   * cards. `oneTap` cards act on every tap; `keepInspect` targets don't close it.
+   */
+  private releasePress() {
+    const p = this.press!;
+    this.press = null;
+    this.ndc.set(-10, -10);
+    const t = p.target;
+    if (!t) {
+      if (!p.moved) this.clearInspect();
+      return;
+    }
+    if (t.userData.preview) {
+      if (p.moved) return;
+      if (t.userData.oneTap) t.userData.onClick?.();
+      else if (p.wasOpen === t) {
+        t.userData.onClick?.();
+        this.clearInspect();
+      }
+      return;
+    }
+    if (this.hovered === t) t.userData.onClick?.();
+    if (!t.userData.keepInspect) this.clearInspect();
   }
 
   private setPointer(e: PointerEvent) {
@@ -122,9 +192,11 @@ export class Stage {
 
   private updateHover() {
     let hit: THREE.Object3D | null = null;
-    if (this.current && this.ndc.x > -2) {
+    const targets = this.current ? this.current.hitTargets().filter((o) => o.visible && isVisibleUp(o)) : [];
+    // The selected card can leave play while it's open.
+    if (this.touchInspected && !targets.includes(this.touchInspected)) this.touchInspected = null;
+    if (this.ndc.x > -2) {
       this.ray.setFromCamera(this.ndc, this.camera);
-      const targets = this.current.hitTargets().filter((o) => o.visible && isVisibleUp(o));
       const hits = this.ray.intersectObjects(targets, false);
       hits.sort((a, b) => worldZ(b.object) - worldZ(a.object));
       hit = hits[0]?.object ?? null;
@@ -139,6 +211,19 @@ export class Stage {
 
   get hoveredObject() {
     return this.hovered;
+  }
+
+  /** The card to show: the one a touch selected, otherwise whatever the mouse is over. */
+  get inspectedObject() {
+    return this.touchInspected ?? this.hovered;
+  }
+
+  get touchInspecting() {
+    return !!this.touchInspected;
+  }
+
+  clearInspect() {
+    this.touchInspected = null;
   }
 
   start() {

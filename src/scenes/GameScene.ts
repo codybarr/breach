@@ -6,7 +6,9 @@ import { Game, MAX_INTEGRITY, type Card, type GameEvent } from '../engine/game';
 import { applyAction, type Action } from '../net/actions';
 import { session, type NetClient } from '../net/client';
 import type { MatchStart, ServerMsg } from '../net/protocol';
+import { compact, touch } from '../mobile';
 import { CardView } from '../render/cardView';
+import { CardInspector, type InspectAction } from '../render/inspector';
 import { VH, VW, type SceneLike, type Stage } from '../render/stage';
 import { Button, COLOR, CanvasPlane, FONT, Label, TITLE_FONT, drawFrame, hexA, wrap } from '../render/ui';
 import { DIFFICULTIES } from './StartScene';
@@ -15,27 +17,92 @@ import { ReferenceOverlay } from './ReferenceOverlay';
 
 // ───────────────────────── layout (virtual px, y-up) ─────────────────────────
 const MID_X = 707;
-const L = {
-  hand: { x: MID_X, y: 140, s: 1 },
+const DESKTOP = {
+  fitHeight: VH,
+  mid: MID_X,
+  overlayX: MID_X + 30,
+  hand: { x: MID_X, y: 140, s: 1, spread: 680, maxGap: 132 },
   play: { x: MID_X, y: 362, s: 0.62 },
   aiHand: { x: MID_X - 40, y: 840, s: 0.42 },
-  banner: { x: MID_X, y: 452 },
+  banner: { x: MID_X, y: 452, w: 760, h: 34 },
   trash: { x: MID_X, y: 470 },
   deck: [{ x: 82, y: 108 }, { x: 980, y: 840 }],
   discard: [{ x: 205, y: 108 }, { x: 1050, y: 840 }],
   pileScale: [0.62, 0.42],
-  panel: [{ x: 172, y: 252, h: 128 }, { x: 172, y: 840, h: 104 }],
-  preview: { x: 1345, y: 606, s: 1.72 },
-  res: { x: 1345, y: 382 },
-  log: { x: 1345, y: 112 },
+  panel: [{ x: 172, y: 252, w: 316, h: 128 }, { x: 172, y: 840, w: 316, h: 104 }],
+  res: { x: 1345, y: 382, w: 480, h: 76 },
+  log: { x: 1345, y: 112, w: 480, h: 196 },
+  info: { x: 1265, y: 866, w: 330 },
+  timer: { x: 1345, y: 840, w: 200 },
+  btn: {
+    a: { x: 1226, y: 300, w: 232, h: 54 },
+    b: { x: 1464, y: 300, w: 232, h: 54 },
+    c: { x: 1345, y: 238, w: 470, h: 56 },
+    abort: { x: 1510, y: 866, w: 150, h: 38 },
+    help: { x: 1345, y: 810, w: 190, h: 38 },
+  },
+  basic: {
+    megabyte: { x: 75, y: 712 }, gigabyte: { x: 172, y: 712 }, terabyte: { x: 269, y: 712 },
+    node: { x: 75, y: 560 }, server: { x: 172, y: 560 }, mainframe: { x: 269, y: 560 },
+    malware: { x: 172, y: 408 },
+  } as Record<string, { x: number; y: number }>,
+  basicS: 0.58,
+  kingdomS: 0.66,
+  kingdomPos: (i: number) => ({ x: MID_X + ((i % 5) - 2) * 124, y: 712 - Math.floor(i / 5) * 152 }),
+  /** Supply count, relative to the bottom edge of the card. */
+  countOffset: -11,
+  pileLabelOffset: -10,
+  text: {
+    banner: 18, info: 14, timer: 16, count: 14, pile: 12, button: undefined as number | undefined,
+    log: 13, logLine: 15.5, panelName: 30, panelVp: 28, panelSmall: 13, panelRow2: 48, resKey: 14, resVal: 44, resGap: 40,
+  },
+  helpLabel: 'RULES / GLOSSARY',
 };
-const BASIC_POS: Record<string, { x: number; y: number }> = {
-  megabyte: { x: 75, y: 712 }, gigabyte: { x: 172, y: 712 }, terabyte: { x: 269, y: 712 },
-  node: { x: 75, y: 560 }, server: { x: 172, y: 560 }, mainframe: { x: 269, y: 560 },
-  malware: { x: 172, y: 408 },
+
+// Phones: height is the limit, so show a shorter frame and fill it edge to edge. The
+// tap-to-open preview replaces the inspect pane, and the opponent's piles sit off-screen.
+const OFFSCREEN = { x: 1400, y: 1000 };
+const BASIC_ORDER = ['megabyte', 'gigabyte', 'terabyte', 'node', 'server', 'mainframe', 'malware'];
+const supplyColumn = (i: number) => 72 + i * 118;
+const COMPACT: typeof DESKTOP = {
+  fitHeight: 760,
+  mid: 720,
+  overlayX: 800,
+  hand: { x: 720, y: 200, s: 1.15, spread: 840, maxGap: 150 },
+  play: { x: 720, y: 392, s: 0.66 },
+  aiHand: { ...OFFSCREEN, s: 0.42 },
+  banner: { x: 720, y: 486, w: 940, h: 38 },
+  trash: { x: 720, y: 470 },
+  deck: [{ x: 70, y: 170 }, OFFSCREEN],
+  discard: [{ x: 180, y: 170 }, OFFSCREEN],
+  pileScale: [0.62, 0.42],
+  panel: [{ x: 1397, y: 627, w: 385, h: 150 }, { x: 1397, y: 767, w: 385, h: 125 }],
+  res: { x: 1397, y: 496, w: 385, h: 90 },
+  log: { x: 1397, y: 356, w: 385, h: 180 },
+  info: { x: 1020, y: 694, w: 330 },
+  timer: { x: 1020, y: 734, w: 330 },
+  btn: {
+    a: { x: 1299, y: 215, w: 190, h: 90 },
+    b: { x: 1495, y: 215, w: 190, h: 90 },
+    c: { x: 1397, y: 120, w: 385, h: 90 },
+    help: { x: 940, y: 792, w: 170, h: 68 },
+    abort: { x: 1110, y: 792, w: 160, h: 68 },
+  },
+  basic: Object.fromEntries(BASIC_ORDER.map((id, i) => [id, { x: supplyColumn(i), y: 750 }])),
+  basicS: 0.76,
+  kingdomS: 0.76,
+  kingdomPos: (i: number) => ({ x: supplyColumn(i), y: 585 }),
+  countOffset: 15,
+  pileLabelOffset: -13,
+  text: {
+    banner: 26, info: 20, timer: 24, count: 24, pile: 20, button: 25,
+    log: 19, logLine: 23, panelName: 36, panelVp: 34, panelSmall: 21, panelRow2: 56, resKey: 22, resVal: 58, resGap: 48,
+  },
+  helpLabel: 'RULES',
 };
-const BASIC_S = 0.58;
-const KINGDOM_S = 0.66;
+const L = compact ? COMPACT : DESKTOP;
+const SPACE_HINT = compact ? '' : 'SPACE';
+const PANE = { x: 1345, y: 606, s: 1.72 };
 
 interface Tracked { view: CardView; owner: number }
 interface Floater { label: Label; vy: number; life: number; max: number }
@@ -67,6 +134,7 @@ interface NetState {
 
 export class GameScene implements SceneLike {
   root = new THREE.Group();
+  fitHeight = L.fitHeight;
   game: Game;
   private ai: AI | null;
   private difficulty: Difficulty;
@@ -94,7 +162,7 @@ export class GameScene implements SceneLike {
   private timer = new MatchTimer();
   private timerLabel: Label;
   private preview: CardView;
-  private previewFrame: CanvasPlane;
+  private inspector: CardInspector;
   private bigText: Label;
   private bigTextLife = 0;
   private btnA: Button;
@@ -139,54 +207,59 @@ export class GameScene implements SceneLike {
 
     for (let p = 0; p < 2; p++) {
       const pl = L.panel[p];
-      const c = new CanvasPlane(316, pl.h);
+      const c = new CanvasPlane(pl.w, pl.h);
       c.at(pl.x, pl.y, 5);
       this.panels.push(c);
       this.root.add(c.mesh);
     }
 
-    this.res = new CanvasPlane(480, 76).at(L.res.x, L.res.y, 5);
-    this.log = new CanvasPlane(480, 196).at(L.log.x, L.log.y, 5);
-    this.banner = new Label(760, 34, '', { size: 18, align: 'center', color: COLOR.cyan, glow: 8 });
+    this.res = new CanvasPlane(L.res.w, L.res.h).at(L.res.x, L.res.y, 5);
+    this.log = new CanvasPlane(L.log.w, L.log.h).at(L.log.x, L.log.y, 5);
+    this.banner = new Label(L.banner.w, L.banner.h, '', { size: L.text.banner, align: 'center', color: COLOR.cyan, glow: 8 });
     this.banner.at(L.banner.x, L.banner.y, 6);
-    this.info = new Label(330, 30, '', { size: 14, color: COLOR.mid, glow: 0 });
-    this.info.at(1265, 866, 5);
-    this.timerLabel = new Label(200, 20, '', { size: 16, color: COLOR.cyan, align: 'center' });
-    this.timerLabel.at(1345, 840, 5);
+    this.info = new Label(L.info.w, 30, '', { size: L.text.info, color: COLOR.mid, glow: 0, align: compact ? 'center' : 'left' });
+    this.info.at(L.info.x, L.info.y, 5);
+    this.timerLabel = new Label(L.timer.w, L.text.timer * 1.3, '', { size: L.text.timer, color: COLOR.cyan, align: 'center' });
+    this.timerLabel.at(L.timer.x, L.timer.y, 5);
     this.root.add(this.timerLabel.mesh);
     this.bigText = new Label(900, 120, '', { size: 92, font: TITLE_FONT, align: 'center', color: COLOR.green, glow: 24 });
-    this.bigText.at(MID_X, 470, 400);
+    this.bigText.at(L.mid, 470, 400);
     this.bigText.mat.opacity = 0;
     this.root.add(this.res.mesh, this.log.mesh, this.banner.mesh, this.info.mesh, this.bigText.mesh);
 
-    this.previewFrame = new CanvasPlane(280, 384);
-    this.previewFrame.redraw((ctx, w, h) => {
-      drawFrame(ctx, 6, 6, w - 12, h - 12, COLOR.dim, { fill: 'rgba(2,10,7,0.5)', title: ' INSPECT ' });
-      ctx.font = `14px ${FONT}`;
-      ctx.fillStyle = COLOR.mid;
-      ctx.textAlign = 'center';
-      ctx.fillText('hover a card', w / 2, h / 2 - 8);
-      ctx.fillText('to inspect it', w / 2, h / 2 + 12);
-    });
-    this.previewFrame.at(L.preview.x, L.preview.y, 4);
-    this.root.add(this.previewFrame.mesh);
+    if (!compact) {
+      const frame = new CanvasPlane(280, 384);
+      frame.redraw((ctx, w, h) => {
+        drawFrame(ctx, 6, 6, w - 12, h - 12, COLOR.dim, { fill: 'rgba(2,10,7,0.5)', title: ' INSPECT ' });
+        ctx.font = `14px ${FONT}`;
+        ctx.fillStyle = COLOR.mid;
+        ctx.textAlign = 'center';
+        ctx.fillText(touch ? 'tap a card' : 'hover a card', w / 2, h / 2 - 8);
+        ctx.fillText('to inspect it', w / 2, h / 2 + 12);
+      });
+      frame.at(PANE.x, PANE.y, 4);
+      this.root.add(frame.mesh);
+    }
     this.preview = new CardView('megabyte');
-    this.preview.place(L.preview.x, L.preview.y, 300, L.preview.s).snap();
+    this.preview.place(PANE.x, PANE.y, 300, PANE.s).snap();
     this.preview.group.visible = false;
     this.preview.speed = 30;
     this.root.add(this.preview.group);
+    this.inspector = new CardInspector(stage);
+    this.root.add(this.inspector.root);
 
-    this.btnA = new Button(232, 54, { label: 'RUN CURRENCY', hotkey: 'C', color: COLOR.amber });
-    this.btnA.at(1226, 300, 20);
+    const fontSize = L.text.button;
+    this.btnA = new Button(L.btn.a.w, L.btn.a.h, { label: 'RUN CURRENCY', hotkey: compact ? '' : 'C', color: COLOR.amber, fontSize });
+    this.btnA.at(L.btn.a.x, L.btn.a.y, 20);
     this.btnA.onClick = () => this.act({ k: 'currency' });
-    this.btnB = new Button(232, 54, { label: 'END ACTIONS', hotkey: 'E', color: COLOR.cyan });
-    this.btnB.at(1464, 300, 20);
+    this.btnB = new Button(L.btn.b.w, L.btn.b.h, { label: 'END ACTIONS', hotkey: compact ? '' : 'E', color: COLOR.cyan, fontSize });
+    this.btnB.at(L.btn.b.x, L.btn.b.y, 20);
     this.btnB.onClick = () => this.act({ k: 'acquire' });
-    this.btnC = new Button(470, 56, { label: 'END TURN', hotkey: 'SPACE', color: COLOR.orange });
-    this.btnC.at(1345, 238, 20);
+    this.btnC = new Button(L.btn.c.w, L.btn.c.h, { label: 'END TURN', hotkey: SPACE_HINT, color: COLOR.orange, fontSize });
+    this.btnC.at(L.btn.c.x, L.btn.c.y, 20);
     this.btnC.onClick = () => this.primaryAction();
-    this.btnAbort = new Button(150, 38, { label: 'ABORT', color: COLOR.red });
-    this.btnAbort.at(1510, 866, 20);
+    this.btnAbort = new Button(L.btn.abort.w, L.btn.abort.h, { label: 'ABORT', color: COLOR.red, fontSize });
+    this.btnAbort.at(L.btn.abort.x, L.btn.abort.y, 20);
     this.btnAbort.onClick = () => {
       if (this.abortArmed > 0) {
         if (this.net && !this.game.over) this.act({ k: 'forfeit', reason: 'abort' });
@@ -198,8 +271,8 @@ export class GameScene implements SceneLike {
     };
     this.root.add(this.btnA.mesh, this.btnB.mesh, this.btnC.mesh, this.btnAbort.mesh);
 
-    this.btnHelp = new Button(190, 38, { label: 'RULES / GLOSSARY', color: COLOR.cyan });
-    this.btnHelp.at(1345, 810, 20);
+    this.btnHelp = new Button(L.btn.help.w, L.btn.help.h, { label: L.helpLabel, color: COLOR.cyan, fontSize });
+    this.btnHelp.at(L.btn.help.x, L.btn.help.y, 20);
     this.btnHelp.onClick = () => this.reference.show();
     this.root.add(this.btnHelp.mesh, this.reference.root);
 
@@ -216,17 +289,18 @@ export class GameScene implements SceneLike {
       const v = new CardView(id);
       v.place(x, y, 10, s).snap();
       v.face.userData.preview = id;
+      v.face.userData.pile = id;
       v.face.userData.onClick = () => this.onPileClick(id);
       v.face.userData.onHover = (on: boolean) => on && sfx.hover();
-      const count = new Label(70, 20, '', { size: 14, align: 'center', color: COLOR.white, glow: 4 });
-      count.at(x, y - (210 * s) / 2 - 11, 11);
+      const count = new Label(70, L.text.count * 1.4, '', { size: L.text.count, align: 'center', color: COLOR.white, glow: 4 });
+      count.at(x, y - (210 * s) / 2 + L.countOffset, 11);
       this.root.add(v.group, count.mesh);
       this.piles.set(id, { view: v, count, x, y, s });
     };
-    for (const id of g.basicOrder) place(id, BASIC_POS[id].x, BASIC_POS[id].y, BASIC_S);
+    for (const id of g.basicOrder) place(id, L.basic[id].x, L.basic[id].y, L.basicS);
     g.kingdom.forEach((id, i) => {
-      const col = i % 5, row = Math.floor(i / 5);
-      place(id, MID_X + (col - 2) * 124, 712 - row * 152, KINGDOM_S);
+      const pos = L.kingdomPos(i);
+      place(id, pos.x, pos.y, L.kingdomS);
     });
   }
 
@@ -241,8 +315,8 @@ export class GameScene implements SceneLike {
       this.discardViews.push(disc);
       this.root.add(deck.group, disc.group);
       for (const pos of [L.deck[p], L.discard[p]]) {
-        const l = new Label(110, 18, '', { size: 12, align: 'center', color: COLOR.mid, glow: 0 });
-        l.at(pos.x, pos.y - (210 * s) / 2 - 10, 9);
+        const l = new Label(112, L.text.pile * 1.4, '', { size: L.text.pile, align: 'center', color: COLOR.mid, glow: 0 });
+        l.at(pos.x, pos.y - (210 * s) / 2 + L.pileLabelOffset, 9);
         this.pileCounts.push(l);
         this.root.add(l.mesh);
       }
@@ -260,10 +334,10 @@ export class GameScene implements SceneLike {
     this.overlay.add(shade);
     const again = new Button(260, 58, { label: this.net ? 'LAN LOBBY' : 'RUN AGAIN', color: COLOR.green });
     again.onClick = this.net ? () => opts.onLobby?.() : opts.onRestart;
-    again.at(MID_X + 30 - 150, 300, 520);
+    again.at(L.overlayX - 150, 300, 520);
     const menu = new Button(260, 58, { label: 'MAIN MENU', color: COLOR.cyan });
     menu.onClick = opts.onExit;
-    menu.at(MID_X + 30 + 150, 300, 520);
+    menu.at(L.overlayX + 150, 300, 520);
     this.overlayButtons.push(again, menu);
     this.overlay.add(again.mesh, menu.mesh);
     this.overlay.visible = false;
@@ -279,13 +353,13 @@ export class GameScene implements SceneLike {
     const color = won ? COLOR.green : draw ? COLOR.amber : COLOR.red;
     const head = new Label(1100, 140, won ? 'ACCESS GRANTED' : draw ? 'STALEMATE' : 'CONNECTION LOST',
       { size: 120, font: TITLE_FONT, align: 'center', color, glow: 30 });
-    head.at(MID_X + 30, 590, 510);
+    head.at(L.overlayX, 590, 510);
     const p = this.game.players;
     const [a, b] = [this.me, this.them];
     const sub = new Label(1000, 90,
       `${o.reason}\nVP  ${p[a].name} ${o.scores[a]}  ·  ${p[b].name} ${o.scores[b]}     INT  ${p[a].name} ${p[a].integrity}  ·  ${p[b].name} ${p[b].integrity}`,
       { size: 20, align: 'center', color: COLOR.white, glow: 6, lineHeight: 1.6 });
-    sub.at(MID_X + 30, 450, 510);
+    sub.at(L.overlayX, 450, 510);
     this.overlay.add(head.mesh, sub.mesh);
     this.overlay.visible = true;
     if (won) sfx.win(); else sfx.lose();
@@ -438,6 +512,48 @@ export class GameScene implements SceneLike {
     return s.credits + s.hand.reduce((a, c) => a + (this.game.def(c).credits ?? 0), 0);
   }
 
+  /** What the button under an opened card should offer right now. */
+  private inspectAction(): InspectAction | null {
+    const obj = this.stage.inspectedObject;
+    const g = this.game;
+    if (!this.inspector.open || !obj || g.over) return null;
+    const pr = this.humanPrompt();
+    if (pr?.kind === 'hand') {
+      const enabled = this.selected.size >= pr.min && this.selected.size <= pr.max;
+      return { label: 'CONFIRM', enabled, run: () => this.primaryAction() };
+    }
+    const pile: string | undefined = obj.userData.pile;
+    if (pile) return this.pileAction(pile);
+    const card = g.players[this.me].hand.find((c) => c.id === obj.userData.cardId);
+    return card ? this.handAction(card) : null;
+  }
+
+  private pileAction(id: string): InspectAction {
+    const g = this.game;
+    const pr = this.humanPrompt();
+    const no = (label: string): InspectAction => ({ label, enabled: false });
+    const run = () => this.onPileClick(id);
+    if (pr?.kind === 'supply') return g.supplyEligible(pr, id) ? { label: 'SELECT', enabled: true, run } : no('NOT AN OPTION');
+    if (!this.myTurn()) return no('NOT YOUR TURN');
+    const d = g.def(id);
+    if (d.kind === 'malware') return no("CAN'T ACQUIRE");
+    if (g.supply[id] <= 0) return no('SOLD OUT');
+    if (g.players[this.me].bandwidth <= 0) return no('NO BANDWIDTH');
+    if (this.potentialCredits() < d.cost) return no(`NEED ${d.cost} CR`);
+    return { label: `BUY · ${d.cost} CR`, enabled: true, run };
+  }
+
+  private handAction(card: Card): InspectAction | null {
+    const g = this.game;
+    const d = g.def(card);
+    if (d.kind !== 'program' && d.kind !== 'currency') return null;
+    if (g.canPlay(this.me, card) && !this.paused()) {
+      return { label: d.kind === 'program' ? 'RUN' : 'PLAY', enabled: true, run: () => this.onHandClick(card) };
+    }
+    if (!this.myTurn()) return { label: 'NOT YOUR TURN', enabled: false };
+    return { label: g.phase === 'action' ? 'NO CYCLES LEFT' : 'ACTION PHASE ONLY', enabled: false };
+  }
+
   onKey(e: KeyboardEvent) {
     if (e.key === 'm' || e.key === 'M') { sfx.muted = !sfx.muted; return; }
     if (e.key === '-' || e.key === '_') { sfx.volume -= 10; sfx.click(); return; }
@@ -461,7 +577,9 @@ export class GameScene implements SceneLike {
   hitTargets(): THREE.Object3D[] {
     if (this.overlay.visible) return this.overlayButtons.map((b) => b.mesh);
     if (this.reference.root.visible) return this.reference.hitTargets();
-    const out: THREE.Object3D[] = [this.btnA.mesh, this.btnB.mesh, this.btnC.mesh, this.btnAbort.mesh, this.btnHelp.mesh];
+    const out: THREE.Object3D[] = this.inspector.open
+      ? this.inspector.hitTargets()
+      : [this.btnA.mesh, this.btnB.mesh, this.btnC.mesh, this.btnAbort.mesh, this.btnHelp.mesh];
     for (const p of this.piles.values()) out.push(p.view.face);
     for (const t of this.views.values()) if (!t.view.leaving && t.view.face.userData.preview) out.push(t.view.face);
     for (const d of this.discardViews) if (d.group.visible) out.push(d.face);
@@ -480,9 +598,9 @@ export class GameScene implements SceneLike {
       if (this.abortArmed <= 0) this.btnAbort.set({ label: 'ABORT' });
     }
 
-    const hov = this.stage.hoveredObject;
-    this.hoveredCardId = hov?.userData.cardId ?? null;
-    const prevId: string | undefined = hov?.userData.preview;
+    const inspected = this.stage.inspectedObject;
+    this.hoveredCardId = inspected?.userData.cardId ?? null;
+    const prevId: string | undefined = compact || this.inspector.open ? undefined : inspected?.userData.preview;
     if (prevId) {
       this.preview.setDef(prevId);
       this.preview.setFaceUp(true);
@@ -491,6 +609,7 @@ export class GameScene implements SceneLike {
       this.preview.group.visible = false;
     }
     this.preview.update(dt, t);
+    this.inspector.update(dt, t, this.inspectAction());
 
     this.sync(dt, t);
     this.refreshHud(t);
@@ -664,14 +783,15 @@ export class GameScene implements SceneLike {
     // Human hand.
     const me = g.players[this.me];
     const n = me.hand.length;
-    const spacing = Math.min(132, 680 / Math.max(1, n));
+    const spacing = Math.min(L.hand.maxGap, L.hand.spread / Math.max(1, n));
     me.hand.forEach((c, i) => {
       const off = i - (n - 1) / 2;
       const hovered = this.hoveredCardId === c.id;
       const sel = this.selected.has(c.id);
       const y = L.hand.y - Math.abs(off) * 3 + (sel ? 34 : 0) + (hovered ? 26 : 0);
-      const v = want(c, this.me, L.hand.x + off * spacing, y, hovered ? 200 : 100 + i, hovered ? 1.08 : L.hand.s, hovered ? 0 : -off * 0.025, true);
+      const v = want(c, this.me, L.hand.x + off * spacing, y, hovered ? (this.inspector.open ? 595 : 200) : 100 + i, L.hand.s * (hovered ? 1.08 : 1), hovered ? 0 : -off * 0.025, true);
       v.face.userData.onClick = () => this.onHandClick(c);
+      v.face.userData.oneTap = pr?.kind === 'hand';
       const d = g.def(c);
       if (pr?.kind === 'hand') {
         const ok = g.handEligible(pr, c);
@@ -764,9 +884,9 @@ export class GameScene implements SceneLike {
       }
       pile.view.glowColor = glow;
       pile.view.glowPulse = pulse;
-      const hovered = this.stage.hoveredObject === pile.view.face;
+      const hovered = this.stage.inspectedObject === pile.view.face;
       pile.view.target.opacity = left > 0 ? (pr?.kind === 'supply' && !glow ? 0.35 : 1) : 0.2;
-      pile.view.place(pile.x, pile.y + (hovered ? 6 : 0), hovered ? 15 : 10, pile.s * (hovered ? 1.06 : 1));
+      pile.view.place(pile.x, pile.y + (hovered ? 6 : 0), hovered ? (this.inspector.open ? 595 : 15) : 10, pile.s * (hovered ? 1.06 : 1));
       pile.view.update(dt, t);
     }
 
@@ -808,17 +928,17 @@ export class GameScene implements SceneLike {
         drawFrame(ctx, 4, 10, w - 8, h - 14, col, { fill: 'rgba(2,10,7,0.8)', title: ` ${cur.name} · ${g.phase === 'action' ? 'ACTION' : 'ACQUIRE'} ` });
         const cells: [string, number, string][] = [['CYC', cur.cycles, COLOR.green], ['CR', cur.credits, COLOR.amber], ['BW', cur.bandwidth, COLOR.cyan]];
         cells.forEach(([k, v, c], i) => {
-          const x = 30 + i * 152;
-          ctx.font = `14px ${FONT}`;
+          const x = 30 + (i * (w - 24)) / 3;
+          ctx.font = `${L.text.resKey}px ${FONT}`;
           ctx.fillStyle = c;
           ctx.globalAlpha = 0.7;
           ctx.textBaseline = 'middle';
           ctx.fillText(k, x, h / 2 + 4);
           ctx.globalAlpha = 1;
-          ctx.font = `44px ${TITLE_FONT}`;
+          ctx.font = `${L.text.resVal}px ${TITLE_FONT}`;
           ctx.shadowColor = c;
           ctx.shadowBlur = 12;
-          ctx.fillText(String(v), x + 40, h / 2 + 5);
+          ctx.fillText(String(v), x + L.text.resGap, h / 2 + 5);
           ctx.shadowBlur = 0;
         });
       });
@@ -839,16 +959,16 @@ export class GameScene implements SceneLike {
     } else if (human?.kind === 'hand') {
       const need = human.min === human.max ? `${human.min}` : `${human.min}-${human.max}`;
       text = `▶ ${human.title}  [${this.selected.size}/${need}]`;
-    } else if (human?.kind === 'supply') text = `▶ ${human.title} — click a highlighted card`;
+    } else if (human?.kind === 'supply') text = `▶ ${human.title} — ${touch ? 'tap a highlighted card, then SELECT' : 'click a highlighted card'}`;
     else if (pr) { text = `${them} IS DECIDING${dots}`; bcol = COLOR.orange; }
     else if (g.current === this.them) { text = `${them} IS EXECUTING${dots}`; bcol = COLOR.orange; }
     else if (g.phase === 'action') {
       const me = g.players[this.me];
       const hasProg = me.hand.some((c) => g.def(c).kind === 'program');
-      text = hasProg && me.cycles > 0 ? 'ACTION PHASE — click a program to run it' : 'play currency, then acquire from the supply';
+      text = hasProg && me.cycles > 0 ? (touch ? 'ACTION PHASE — tap a program, tap again to run' : 'ACTION PHASE — click a program to run it') : 'play currency, then acquire from the supply';
       bcol = COLOR.green;
     } else {
-      text = 'ACQUIRE PHASE — click a supply card to buy it';
+      text = touch ? 'ACQUIRE PHASE — tap a supply card, tap again to buy' : 'ACQUIRE PHASE — click a supply card to buy it';
       bcol = COLOR.green;
     }
     this.banner.set(text, { color: bcol });
@@ -867,15 +987,15 @@ export class GameScene implements SceneLike {
     } else if (human?.kind === 'hand') {
       show(this.btnA, false); show(this.btnB, false); show(this.btnC, true);
       const ok = this.selected.size >= human.min && this.selected.size <= human.max;
-      this.btnC.set({ label: 'CONFIRM', enabled: ok, color: COLOR.cyan, hotkey: 'SPACE' });
+      this.btnC.set({ label: 'CONFIRM', enabled: ok, color: COLOR.cyan, hotkey: SPACE_HINT });
     } else if (human?.kind === 'supply') {
       show(this.btnA, false); show(this.btnB, false); show(this.btnC, true);
-      this.btnC.set({ label: 'SKIP', enabled: true, color: COLOR.mid, hotkey: 'SPACE' });
+      this.btnC.set({ label: 'SKIP', enabled: true, color: COLOR.mid, hotkey: SPACE_HINT });
     } else if (myTurn) {
       show(this.btnA, true); show(this.btnB, true); show(this.btnC, true);
       this.btnA.set({ enabled: me.hand.some((c) => g.def(c).kind === 'currency') });
       this.btnB.set({ enabled: g.phase === 'action', label: g.phase === 'action' ? 'END ACTIONS' : 'ACQUIRING' });
-      this.btnC.set({ label: 'END TURN', enabled: true, color: COLOR.orange, hotkey: 'SPACE' });
+      this.btnC.set({ label: 'END TURN', enabled: true, color: COLOR.orange, hotkey: SPACE_HINT });
     } else {
       show(this.btnA, false); show(this.btnB, false); show(this.btnC, true);
       this.btnC.set({ label: this.paused() ? 'PAUSED' : 'STANDBY', enabled: false, hotkey: '' });
@@ -887,7 +1007,7 @@ export class GameScene implements SceneLike {
       this.logKey = lk;
       this.log.redraw((ctx, w, h) => {
         drawFrame(ctx, 4, 10, w - 8, h - 14, COLOR.dim, { fill: 'rgba(2,10,7,0.8)', title: ' /var/log/session ' });
-        ctx.font = `13px ${FONT}`;
+        ctx.font = `${L.text.log}px ${FONT}`;
         ctx.textBaseline = 'top';
         const lines: { s: string; c: string }[] = [];
         const meName = g.players[this.me].name, themName = g.players[this.them].name;
@@ -896,11 +1016,11 @@ export class GameScene implements SceneLike {
             : raw.trim().startsWith(`${themName} `) ? COLOR.orange : raw.trim().startsWith(`${meName} `) ? COLOR.green : COLOR.mid;
           for (const s of wrap(ctx, raw, w - 36)) lines.push({ s, c });
         }
-        const maxLines = Math.floor((h - 30) / 15.5);
+        const maxLines = Math.floor((h - 30) / L.text.logLine);
         lines.slice(-maxLines).forEach((ln, i) => {
           ctx.fillStyle = ln.c;
           ctx.globalAlpha = ln.c === COLOR.mid ? 0.85 : 1;
-          ctx.fillText(ln.s, 18, 22 + i * 15.5);
+          ctx.fillText(ln.s, 18, 22 + i * L.text.logLine);
         });
       });
     }
@@ -911,22 +1031,21 @@ export class GameScene implements SceneLike {
     const s = g.players[p];
     const active = g.current === p && !g.over;
     const blink = active ? Math.floor(t * 2) % 2 : 0;
-    const key = `${s.integrity}|${s.shield}|${g.vp(p)}|${active}|${blink}|${g.allCards(p).length}`;
+    const key = `${s.integrity}|${s.shield}|${g.vp(p)}|${active}|${blink}|${g.allCards(p).length}|${s.hand.length}`;
     const sl = this.slot(p);
     if (key === this.panelKeys[sl]) return;
     this.panelKeys[sl] = key;
     const col = sl === 0 ? COLOR.green : COLOR.orange;
-    const pl = L.panel[sl];
     this.panels[sl].redraw((ctx, w, h) => {
       drawFrame(ctx, 4, 10, w - 8, h - 14, active ? col : hexA(col, 0.5),
         { fill: 'rgba(2,10,7,0.82)', title: sl === 0 ? ' LOCALHOST ' : ' REMOTE HOST ', glow: active ? 14 : 4 });
       ctx.textBaseline = 'middle';
-      ctx.font = `30px ${TITLE_FONT}`;
+      ctx.font = `${L.text.panelName}px ${TITLE_FONT}`;
       ctx.fillStyle = col;
       ctx.shadowColor = col;
       ctx.shadowBlur = 10;
       ctx.fillText(`${active && blink ? '▶' : ' '} ${s.name}`, 14, 36);
-      ctx.font = `28px ${TITLE_FONT}`;
+      ctx.font = `${L.text.panelVp}px ${TITLE_FONT}`;
       ctx.fillStyle = COLOR.cyan;
       ctx.shadowColor = COLOR.cyan;
       ctx.textAlign = 'right';
@@ -953,12 +1072,12 @@ export class GameScene implements SceneLike {
       }
       ctx.shadowBlur = 0;
       ctx.fillStyle = COLOR.white;
-      ctx.font = `13px ${FONT}`;
+      ctx.font = `${L.text.panelSmall}px ${FONT}`;
       const extra = s.shield ? `  SHIELD ${s.shield}` : '';
       ctx.fillText(`INT ${s.integrity}/${MAX_INTEGRITY}${extra}`, 18, by + 28);
-      if (pl.h > 110) {
+      if (sl === 0) {
         ctx.fillStyle = COLOR.mid;
-        ctx.fillText(`CARDS OWNED ${g.allCards(p).length}`, 18, by + 48);
+        ctx.fillText(`CARDS OWNED ${g.allCards(p).length}`, 18, by + L.text.panelRow2);
       }
       ctx.textAlign = 'right';
       ctx.fillStyle = COLOR.mid;
