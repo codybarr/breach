@@ -6,7 +6,8 @@ export type CardKind = 'currency' | 'data' | 'malware' | 'program';
 export type DotModel = 'cpu' | 'honeypot';
 
 /** Flat pixel-art sprites available as card art (drawn in render/pixelArt). */
-export type PixelSprite = 'nose' | 'kiddie' | 'horse' | 'toaster' | 'bot' | 'skull' | 'calendar' | 'honeypot' | 'firewall';
+export type PixelSprite = 'nose' | 'kiddie' | 'horse' | 'toaster' | 'bot' | 'skull' | 'calendar' | 'honeypot' | 'firewall'
+  | 'fork' | 'trash' | 'hdd' | 'rack' | 'cache' | 'cart' | 'door' | 'bandaid' | 'magnifier' | 'hook' | 'gears' | 'screens' | 'padlock';
 
 export interface CardDef {
   id: string;
@@ -85,7 +86,7 @@ const defs: CardDef[] = [
     id: 'fork', name: 'Fork', cost: 3, kind: 'program', givesCycles: 2,
     text: '+1 Card\n+2 Cycles',
     flavor: 'pid_t child = fork();',
-    art: ['   |   ', '   |   ', '  / \\  ', ' /   \\ '],
+    art: ['   |   ', '   |   ', '  / \\  ', ' /   \\ '], sprite: 'fork',
     *effect(c) { c.draw(1); c.cycles(2); },
   },
   {
@@ -115,7 +116,7 @@ const defs: CardDef[] = [
     id: 'garbagecollector', name: 'Garbage Collector', cost: 2, kind: 'program',
     text: 'Trash up to 4 cards\nfrom your hand.',
     flavor: 'free(everything);',
-    art: [' _____ ', ' \\   / ', '  |_|  ', '  [=]  '],
+    art: [' _____ ', ' \\   / ', '  |_|  ', '  [=]  '], sprite: 'trash',
     *effect(c) {
       const picks: number[] = yield c.promptHand({ min: 0, max: 4, purpose: 'trash', title: 'TRASH UP TO 4 CARDS' });
       c.trashFromHand(picks);
@@ -125,7 +126,7 @@ const defs: CardDef[] = [
     id: 'defrag', name: 'Defrag', cost: 4, kind: 'program',
     text: 'Trash a card from your\nhand. Gain a card\ncosting up to 2 more.',
     flavor: 'rearranging the bits.',
-    art: ['▓▓░▓░░▓', '░▓▓░▓▓░', '▓▓▓▓░░░'],
+    art: ['▓▓░▓░░▓', '░▓▓░▓▓░', '▓▓▓▓░░░'], sprite: 'hdd',
     *effect(c) {
       if (c.me.hand.length === 0) return;
       const [pick]: number[] = yield c.promptHand({ min: 1, max: 1, purpose: 'trashUpgrade', title: 'TRASH A CARD' });
@@ -186,21 +187,21 @@ const defs: CardDef[] = [
     id: 'serverrack', name: 'Server Rack', cost: 5, kind: 'program', givesCycles: 1,
     text: '+1 Card\n+1 Cycle\n+1 Bandwidth\n+1 CR',
     flavor: 'blinkenlights included.',
-    art: ['[=====]', '[= . =]', '[=====]', '[= . =]'],
+    art: ['[=====]', '[= . =]', '[=====]', '[= . =]'], sprite: 'rack',
     *effect(c) { c.draw(1); c.cycles(1); c.bandwidth(1); c.credits(1); },
   },
   {
     id: 'l2cache', name: 'L2 Cache', cost: 5, kind: 'program', givesCycles: 1,
     text: '+2 Cards\n+1 Cycle',
     flavor: 'closer to the core.',
-    art: [' ┌┬┬┬┐ ', ' ├┼┼┼┤ ', ' └┴┴┴┘ '],
+    art: [' ┌┬┬┬┐ ', ' ├┼┼┼┤ ', ' └┴┴┴┘ '], sprite: 'cache',
     *effect(c) { c.draw(2); c.cycles(1); },
   },
   {
     id: 'cryptominer', name: 'Crypto Miner', cost: 5, kind: 'program',
     text: 'Trash a Currency from\nyour hand. Gain a\nCurrency costing up to\n3 more, into your hand.',
     flavor: 'proof of work. lots of work.',
-    art: ['  ___  ', ' / ₿ \\ ', ' \\___/ ', ' /|||\\ '],
+    art: ['  ___  ', ' / ₿ \\ ', ' \\___/ ', ' /|||\\ '], sprite: 'cart',
     *effect(c) {
       if (!c.me.hand.some((x) => c.def(x).kind === 'currency')) return;
       const [pick]: number[] = yield c.promptHand({
@@ -220,21 +221,21 @@ const defs: CardDef[] = [
     id: 'backdoor', name: 'Backdoor', cost: 4, kind: 'program', givesCycles: 1,
     text: '+1 Card\n+1 Cycle\n+1 CR',
     flavor: 'nobody checks port 31337.',
-    art: [' _____ ', '|  _  |', '| |_|>|', '|_____|'],
+    art: [' _____ ', '|  _  |', '| |_|>|', '|_____|'], sprite: 'door',
     *effect(c) { c.draw(1); c.cycles(1); c.credits(1); },
   },
   {
     id: 'patch', name: 'Patch', cost: 3, kind: 'program', givesCycles: 1,
     text: '+1 Card\n+1 Cycle\nRestore 3 Integrity.',
     flavor: 'v1.0.1 — fixes everything.',
-    art: ['  ___  ', ' |+ +| ', ' | + | ', ' |+_+| '],
+    art: ['  ___  ', ' |+ +| ', ' | + | ', ' |+_+| '], sprite: 'bandaid',
     *effect(c) { c.draw(1); c.cycles(1); c.heal(3); },
   },
   {
     id: 'antivirus', name: 'Antivirus', cost: 3, kind: 'program',
     text: '+2 Cards\nThen trash all Malware\nfrom your hand.',
     flavor: 'scanning... 1 threat found.',
-    art: ['  ___  ', ' /   \\ ', '| (+) |', ' \\___/ '],
+    art: ['  ___  ', ' /   \\ ', '| (+) |', ' \\___/ '], sprite: 'magnifier',
     *effect(c) {
       c.draw(2);
       const idx = c.me.hand.map((x, i) => (x.def === 'malware' ? i : -1)).filter((i) => i >= 0);
@@ -245,7 +246,7 @@ const defs: CardDef[] = [
     id: 'phishing', name: 'Phishing', cost: 3, kind: 'program',
     text: '+1 Bandwidth\n+2 CR',
     flavor: 'Dear valued customer...',
-    art: ['   /   ', '  /    ', ' J  ><>', '       '],
+    art: ['   /   ', '  /    ', ' J  ><>', '       '], sprite: 'hook',
     *effect(c) { c.bandwidth(1); c.credits(2); },
   },
   {
@@ -279,7 +280,7 @@ const defs: CardDef[] = [
     id: 'compiler', name: 'Compiler', cost: 3, kind: 'program',
     text: 'Gain a card costing\nup to 4.',
     flavor: 'gcc -O3 ./dreams.c',
-    art: ['{ } { }', ' \\ | / ', '  [*]  ', '   |   '],
+    art: ['{ } { }', ' \\ | / ', '  [*]  ', '   |   '], sprite: 'gears',
     *effect(c) {
       const pile: string | null = yield c.promptSupply({ maxCost: 4, title: 'GAIN A CARD COSTING UP TO 4' });
       if (pile) c.gain(pile, 'discard');
@@ -289,7 +290,7 @@ const defs: CardDef[] = [
     id: 'recursion', name: 'Recursion', cost: 4, kind: 'program',
     text: 'Choose a Program in\nyour hand.\nRun it twice.',
     flavor: 'see: Recursion.',
-    art: [' .--.  ', '(  _ ) ', ' `( `) ', '   `-  '],
+    art: [' .--.  ', '(  _ ) ', ' `( `) ', '   `-  '], sprite: 'screens',
     *effect(c) {
       if (!c.me.hand.some((x) => c.def(x).kind === 'program')) return;
       const [pick]: number[] = yield c.promptHand({
@@ -303,7 +304,7 @@ const defs: CardDef[] = [
     id: 'encryption', name: 'Encryption', cost: 4, kind: 'program', givesCycles: 1,
     text: '+1 Card\n+1 Cycle\n+3 Shield (absorbs\nBreach until your\nnext turn).',
     flavor: 'AES-256. good luck.',
-    art: ['  .-.  ', ' |   | ', '[=====]', '[ KEY ]'],
+    art: ['  .-.  ', ' |   | ', '[=====]', '[ KEY ]'], sprite: 'padlock',
     *effect(c) { c.draw(1); c.cycles(1); c.shield(3); },
   },
 ];

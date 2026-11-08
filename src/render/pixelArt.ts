@@ -10,7 +10,8 @@ import { COLOR } from './ui';
  *   o outline   d dark   m mid   l light   h highlight
  *   n hole (near black)  k cast shadow
  *   c cyan glow   g / G dark / light grey   w white   e / E light / dark leaf
- *   a / A amber / dark amber (honey, wood)   f flame orange   . empty
+ *   a / A amber / dark amber (honey, wood)   f flame orange   r / R red / dark red
+ *   . empty
  */
 
 const mix = (a: string, b: string, t: number) => {
@@ -37,11 +38,13 @@ function palette(col: string): Record<string, string> {
     a: COLOR.amber,
     A: mix(COLOR.amber, '#000000', 0.45),
     f: '#ff6a2a',
+    r: COLOR.red,
+    R: mix(COLOR.red, '#000000', 0.45),
   };
 }
 
 /** Shades drawn with a soft glow. */
-const GLOWS = new Set(['h', 'c', 'a', 'f']);
+const GLOWS = new Set(['h', 'c', 'a', 'f', 'r']);
 
 /** Darken one step, for the side turned away from the light. */
 const SHADE_DOWN: Record<string, string> = { h: 'l', l: 'm', m: 'd', d: 'o' };
@@ -49,7 +52,25 @@ const SHADE_DOWN: Record<string, string> = { h: 'l', l: 'm', m: 'd', d: 'o' };
 /** 3x5 glyphs for in-art text, drawn with `fx.glyphs`. */
 const FONT: Record<string, string[]> = {
   '^': ['.#.', '#.#', '...', '...', '...'],
+  '!': ['.#.', '.#.', '.#.', '...', '.#.'],
+  '{': ['.##', '.#.', '##.', '.#.', '.##'],
+  '}': ['##.', '.#.', '.##', '.#.', '##.'],
+  0: ['###', '#.#', '#.#', '#.#', '###'],
+  1: ['.#.', '##.', '.#.', '.#.', '###'],
+  2: ['###', '..#', '###', '#..', '###'],
+  3: ['###', '..#', '.##', '..#', '###'],
+  4: ['#.#', '#.#', '###', '..#', '..#'],
+  5: ['###', '#..', '###', '..#', '###'],
+  6: ['###', '#..', '###', '#.#', '###'],
+  7: ['###', '..#', '..#', '.#.', '.#.'],
+  8: ['###', '#.#', '###', '#.#', '###'],
+  9: ['###', '#.#', '###', '..#', '###'],
+  A: ['.#.', '#.#', '###', '#.#', '#.#'],
+  B: ['##.', '#.#', '##.', '#.#', '##.'],
   C: ['###', '#..', '#..', '#..', '###'],
+  D: ['##.', '#.#', '#.#', '#.#', '##.'],
+  E: ['###', '#..', '##.', '#..', '###'],
+  F: ['###', '#..', '##.', '#..', '#..'],
   V: ['#.#', '#.#', '#.#', '#.#', '.#.'],
 };
 
@@ -527,6 +548,552 @@ const FIREWALL: SpriteDef = {
   },
 };
 
+/**
+ * Fork: a dinner fork, and off either side of it a process tree, each child
+ * spawning children of its own.
+ */
+
+const FORK: SpriteDef = {
+  rows: [
+    'ooo.ooo.ooo.ooo',
+    'owo.owo.owo.owo',
+    'owo.owo.owo.owo',
+    'owo.owo.owo.owo',
+    'owo.owo.owo.owo',
+    'owo.owo.owo.owo',
+    'owo.owo.owo.owo',
+    'owwwwwwwwwwwwGo',
+    'owGGGGGGGGGGGgo',
+    '.owGGGGGGGGGgo.',
+    '..owGGGGGGGgo..',
+    '...owGGGGGgo...',
+    '....owGGGgo....',
+    '.....owGgo.....',
+    '.....owGgo.....',
+    '.....owGgo.....',
+    '.....owGgo.....',
+    '.....owGgo.....',
+    '.....owGgo.....',
+    '.....owGgo.....',
+    '....owGGGgo....',
+    '....owGGGgo....',
+    '....owGGGgo....',
+    '.....ooooo.....',
+  ],
+  decorate({ sw, nx, ny, lit }) {
+    const node = (x: number, y: number, a: number) => { lit(x, y, COLOR.cyan, a); lit(x + 1, y, COLOR.cyan, a); lit(x, y + 1, COLOR.cyan, a); lit(x + 1, y + 1, COLOR.cyan, a); };
+    const branch = (x: number, y: number, dir: number, spread: number, depth: number) => {
+      const xe = x + dir * 5;
+      for (let gx = x; gx !== xe; gx += dir) if ((gx - x) % 2 === 0) lit(gx, y, COLOR.cyan, 0.35);
+      node(dir < 0 ? xe - 1 : xe, y, 0.95 - depth * 0.25);
+      if (depth === 2) return;
+      for (const s of [-1, 1]) {
+        const yc = y + s * spread, xc = dir < 0 ? xe - 1 : xe + 1;
+        for (let gy = y + s * 2; gy !== yc; gy += s) if ((gy - y) % 2 === 0) lit(xc, gy, COLOR.cyan, 0.35);
+        branch(xc + dir, yc, dir, spread / 2, depth + 1);
+      }
+    };
+    branch(nx - 1, ny + 9, -1, 6, 0);
+    branch(nx + sw, ny + 9, 1, 6, 0);
+  },
+};
+
+/**
+ * Garbage Collector: a ribbed bin with its lid lifted, stray bits drifting in
+ * from both sides to be freed.
+ */
+
+const TRASH: SpriteDef = {
+  shadeRight: true,
+  rows: [
+    '........ooooo........',
+    '.......oo...oo.......',
+    '..ooooooooooooooooo..',
+    '.ohhhhhhhhhhhhhhhhho.',
+    'olllllllllllllllllllo',
+    'ommmmmmmmmmmmmmmmmmmo',
+    'ooooooooooooooooooooo',
+    '.....................',
+    'ooooooooooooooooooooo',
+    'ohhhhhhhhhhhhhhhhhhho',
+    'ooooooooooooooooooooo',
+    '.ohlmllmllmllmllmlho.',
+    '.ohlmllmllmllmllmlho.',
+    '.ohlmllmllmllmllmlho.',
+    '.ohlmllmllmllmllmlho.',
+    '.ohlmllmllmllmllmlho.',
+    '..ohmllmllmllmllmho..',
+    '..ohmllmllmllmllmho..',
+    '..ohmllmllmllmllmho..',
+    '..ohmllmllmllmllmho..',
+    '..ohmllmllmllmllmho..',
+    '...ohllmllmllmllho...',
+    '...ooooooooooooooo...',
+    '....kkkkkkkkkkkkk....',
+  ],
+  decorate({ sw, nx, ny, rnd, glyphs, lit }) {
+    for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
+      const x = side < 0 ? nx - 5 - i * 4 : nx + sw + 2 + i * 4, y = ny + 2 + i * 6 + Math.floor(rnd() * 3);
+      const a = 0.9 - i * 0.28;
+      glyphs(rnd() < 0.5 ? '0' : '1', x, y, COLOR.cyan, a);
+      // Dotted path from the bit into the gap under the lid.
+      const tx = side < 0 ? nx - 1 : nx + sw, ty = ny + 7, sx = x + 1, sy = y + 2;
+      const n = Math.max(Math.abs(tx - sx), Math.abs(ty - sy));
+      for (let k = 2; k < n; k += 2) lit(Math.round(sx + (tx - sx) * k / n), Math.round(sy + (ty - sy) * k / n), COLOR.cyan, a * 0.4);
+    }
+  },
+};
+
+/**
+ * Defrag: an open hard drive, platter spinning under the head. To the left,
+ * fragmented blocks; to the right, the same blocks sorted.
+ */
+
+const HDD: SpriteDef = {
+  rows: [
+    'ooooooooooooooooooooooooooo',
+    'ogggggggggggggggggggggggggo',
+    'ogGggggggoooooooggggggggGgo',
+    'oggggggoohhhlllmooggggggggo',
+    'ogggggoohhhhmmmlloogggggggo',
+    'oggggohhhhhhmmmmmlmoggggggo',
+    'ogggoohhhhhhlGlmmmloogggggo',
+    'ogggolhhhhhhmmGGmmmlogggggo',
+    'oggomlmmhhhhmmmwGmmlmoggggo',
+    'oggolmmlmhhhmmmwGlmmloggggo',
+    'oggolmmlmmmGGGmmwGmmloggggo',
+    'oggolmmlmmmGwGmmmwGmloggggo',
+    'oggolmmlmmmGGGmmmwGGloggggo',
+    'oggolmmlmmmmmmmmmlmwGoggggo',
+    'oggomlmmlmmmmmmmlmmwGoggggo',
+    'ogggolmmmlmmmmmlmmmlwGggggo',
+    'ogggoolmmmlllllmmmloowGgggo',
+    'oggggomlmmmmmmmmmlmogGGGggo',
+    'ogggggoollmmmmmllooggGwGggo',
+    'oggggggoomlllllmoogggGGGggo',
+    'ogGggggggoooooooggggggggGgo',
+    'ogggggggggggggggggggggggggo',
+    'ooooooooooooooooooooooooooo',
+  ],
+  decorate({ gw, gh, sw, nx, rnd, pal, lit }) {
+    const cols = Math.max(1, Math.floor((nx - 1) / 3)), rows = Math.floor((gh - 1) / 3);
+    const kinds = Array.from({ length: cols * rows }, () => (rnd() < 0.4 ? 0 : rnd() < 0.55 ? 1 : 2));
+    const sorted = [...kinds].sort((a, b) => b - a);
+    const block = (x: number, y: number, k: number) => {
+      const [c, a] = k === 0 ? [pal.d, 0.3] : k === 1 ? [COLOR.cyan, 0.8] : [pal.l, 0.7];
+      for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) lit(x + dx, y + dy, c, a);
+    };
+    const rx = nx + sw + Math.max(1, Math.floor((gw - nx - sw - cols * 3 + 1) / 2));
+    kinds.forEach((k, i) => block(1 + (i % cols) * 3, 1 + Math.floor(i / cols) * 3, k));
+    // Sorted fills from the bottom up.
+    sorted.forEach((k, i) => block(rx + (i % cols) * 3, 1 + (rows - 1 - Math.floor(i / cols)) * 3, k));
+  },
+};
+
+/**
+ * Server Rack: six units of blinkenlights, cables spilling out either side.
+ */
+
+const RACK: SpriteDef = {
+  rows: [
+    'ooooooooooooooooooooo',
+    'ohhhhhhhhhhhhhhhhhhho',
+    'olGGGGGGGGGGGGGGGGGmo',
+    'olgcghghgggGoGoGoGgmo',
+    'olooooooooooooooooomo',
+    'olGGGGGGGGGGGGGGGGGmo',
+    'olgGGGgGGGgGGGgcgagmo',
+    'olooooooooooooooooomo',
+    'olGGGGGGGGGGGGGGGGGmo',
+    'olghghghghgggggGGGgmo',
+    'olooooooooooooooooomo',
+    'olGGGGGGGGGGGGGGGGGmo',
+    'olgaggggggggGoGoGogmo',
+    'olooooooooooooooooomo',
+    'olGGGGGGGGGGGGGGGGGmo',
+    'olgGGGgGGGgGGGghgcgmo',
+    'olooooooooooooooooomo',
+    'olGGGGGGGGGGGGGGGGGmo',
+    'olgcgagggggGoGoGoGgmo',
+    'olooooooooooooooooomo',
+    'ommmmmmmmmmmmmmmmmmmo',
+    'ooooooooooooooooooooo',
+    '.oGo.............oGo.',
+    '..kkkkkkkkkkkkkkkkk..',
+  ],
+  decorate({ gw, gh, sw, nx, ny, pal, lit }) {
+    const colors = [COLOR.cyan, COLOR.amber, pal.l];
+    for (const side of [-1, 1]) colors.forEach((c, k) => {
+      const sx = side < 0 ? nx - 1 : nx + sw, sy = ny + 4 + k * 6;
+      const ex = side < 0 ? 1 + k * 3 : gw - 2 - k * 3, ey = gh - 1;
+      const n = Math.abs(ex - sx) * 3;
+      for (let i = 0; i <= n; i++) {
+        const t = i / n;
+        lit(Math.round(sx + (ex - sx) * t), Math.round(sy + (ey - sy) * t * t), c, 0.5);
+      }
+    });
+  },
+};
+
+/**
+ * L2 Cache: a memory die, a glowing core ringed by cache lines, a few lit with
+ * hits. Pulses race in along the traces.
+ */
+
+const CACHE: SpriteDef = {
+  rows: [
+    '.....G.G.G.G.G.G.G.G.G.....',
+    '.....G.G.G.G.G.G.G.G.G.....',
+    '...ooooooooooooooooooooo...',
+    '...ogggggggggggggggggggo...',
+    'GGGogooooooooooooooooogoGGG',
+    '...ogonnnnnnnnnnnnnnnogo...',
+    'GGGogonccnmmnllnmmnmmogoGGG',
+    '...ogonccnmmnllnmmnmmogo...',
+    'GGGogonnnnnnnnnnnnnnnogoGGG',
+    '...ogonccnclllllllnccogo...',
+    'GGGogonccnclhhhlllnccogoGGG',
+    '...ogonnnnnlhwhlnnnnnogo...',
+    'GGGogonmmnllhhhlllnmmogoGGG',
+    '...ogonmmnllllllllnmmogo...',
+    'GGGogonnnnnnnnnnnnnnnogoGGG',
+    '...ogonccnmmnllnmmnmmogo...',
+    'GGGogonccnmmnllnmmnmmogoGGG',
+    '...ogonnnnnnnnnnnnnnnogo...',
+    'GGGogooooooooooooooooogoGGG',
+    '...ogggggggggggggggggggo...',
+    '...ooooooooooooooooooooo...',
+    '.....G.G.G.G.G.G.G.G.G.....',
+    '.....G.G.G.G.G.G.G.G.G.....',
+  ],
+  decorate({ gw, sw, sh, nx, ny, rnd, pal, lit }) {
+    for (let y = ny + 4; y < ny + sh - 4; y += 2) for (const side of [-1, 1]) {
+      const x0 = side < 0 ? 0 : nx + sw, x1 = side < 0 ? nx : gw;
+      for (let gx = x0; gx < x1; gx++) lit(gx, y, pal.d, 0.45);
+      if (rnd() < 0.6) {
+        const p = x0 + Math.floor(rnd() * (x1 - x0));
+        for (let t = 0; t < 3; t++) lit(p - side * t, y, COLOR.cyan, 0.95 - t * 0.3);
+      }
+    }
+  },
+};
+
+/**
+ * Crypto Miner: a mine cart heaped with coins, pickaxe left in the pile.
+ * Proof of work.
+ */
+
+const MINER: SpriteDef = {
+  rows: [
+    '.......wwwG..................',
+    '.....wwwGG.G.................',
+    '....wGGGo...G................',
+    '...wG...Ao...................',
+    '..GG.....AoaAaaaawa..........',
+    '..G....aaaAoaaaAaaaaAa.......',
+    '.G....aaAaaAoAaaaaAaaaa......',
+    '.....aAaaaaAAowaAaaaaAaa.....',
+    '....AaaawAaaaAoaaaaAawaaA....',
+    '...aaaaAaaaaAaAoaAaaaaAaaa...',
+    '.ooooooooooooooAoooooooooooo.',
+    '.ohhhhhhhhhhhhhhhhhhhhhhhhho.',
+    '.ohllllllllllllllllllllllllo.',
+    '..ohlmmmmmmmmmmmmmmmmmmmmlo..',
+    '..ohllGlllGlllGlllGlllGlllo..',
+    '...ohllllllllllllllllllllo...',
+    '...ohmmmmmmmmmmmmmmmmmmmmo...',
+    '....ooooGGoooooooooooGGoo....',
+    '.......GwgG.........GwgG.....',
+    '........GG...........GG......',
+    'GGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
+    '.A..A..A..A..A..A..A..A..A..A',
+  ],
+  decorate({ gw, sw, nx, ny, rnd, lit }) {
+    const twinkle = (x: number, y: number, a: number) => {
+      lit(x, y, COLOR.amber, a);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) lit(x + dx, y + dy, COLOR.amber, a * 0.45);
+    };
+    for (let i = 0; i < 3; i++) twinkle(2 + Math.floor(rnd() * (nx - 4)), ny + 2 + i * 6 + Math.floor(rnd() * 3), 0.9 - i * 0.2);
+    for (let i = 0; i < 3; i++) twinkle(nx + sw + 2 + Math.floor(rnd() * (gw - nx - sw - 4)), ny + 2 + i * 6 + Math.floor(rnd() * 3), 0.9 - i * 0.2);
+  },
+};
+
+/**
+ * Backdoor: a plain door, left ajar, cyan light leaking from the gap and
+ * across the floor. Nobody checks port 31337.
+ */
+
+const DOOR: SpriteDef = {
+  rows: [
+    '...ooooooooooooooooo...',
+    '...ohhhhhhhhhhhhhhho...',
+    '...ohlooooooooooolmo...',
+    '...ohlollllllocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlollllllocwclmo...',
+    '...ohlolllllAocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlolmmmdlocwclmo...',
+    '...ohlollllllocwclmo...',
+    '...ooooooooooooooooo...',
+    'ggggggggggggggggggggggg',
+  ],
+  decorate({ gw, gh, nx, ny, rnd, lit }) {
+    const floor = ny + 22;
+    for (let gx = 0; gx < gw; gx++) lit(gx, floor, '#30383e', 1);
+    for (let k = 1; floor + k < gh; k++) for (let gx = nx + 13 - k; gx <= nx + 17 + k * 4; gx++) {
+      lit(gx, floor + k, COLOR.cyan, Math.max(0.05, 0.55 - k * 0.12 - (gx - nx - 13) * 0.02));
+    }
+    for (let i = 0; i < 10; i++) lit(nx + 21 + Math.floor(rnd() * 12), ny + 3 + Math.floor(rnd() * 18), COLOR.cyan, 0.15 + rnd() * 0.35);
+  },
+};
+
+/**
+ * Patch: two band-aids slapped on in an X. Fixes everything.
+ */
+
+const PATCH: SpriteDef = {
+  rows: [
+    '.........................',
+    '.........................',
+    '.........................',
+    '....llho.........ohll....',
+    '....lmmho.......ohmml....',
+    '....mmllho.....ohllmm....',
+    '....olllmho...ohmlllo....',
+    '.....olmllho.ohllmlo.....',
+    '......olllmGoGmlllo......',
+    '.......olmGoGgGmlo.......',
+    '........oGoGgGgGo........',
+    '.........oGgGgGo.........',
+    '........oGgGgGoGo........',
+    '.......ohmGgGoGmho.......',
+    '......ohllmGoGmllho......',
+    '.....ohmlllo.olllmho.....',
+    '....ohllmlo...olmllho....',
+    '....hmlllo.....olllmh....',
+    '....lmmlo.......olmml....',
+    '....llmo.........omll....',
+    '.........................',
+    '.........................',
+    '.........................',
+  ],
+  decorate({ gw, gh, sw, nx, rnd, lit }) {
+    const sparkle = (x: number, y: number, r: number, a: number) => {
+      lit(x, y, COLOR.cyan, a);
+      for (let d = 1; d <= r; d++) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) lit(x + dx * d, y + dy * d, COLOR.cyan, a * (0.7 - d * 0.2));
+    };
+    const spots: [number, number, number][] = [[nx - 6, 4, 2], [nx - 10, 14, 1], [nx - 4, 21, 1], [nx + sw + 5, 6, 1], [nx + sw + 9, 16, 2], [nx + sw + 3, 22, 1]];
+    for (const [x, y, r] of spots) if (x > 1 && x < gw - 2 && y < gh - 1) sparkle(x, y, r, 0.6 + rnd() * 0.35);
+  },
+};
+
+/**
+ * Antivirus: a magnifying glass over a single red virus, a scan line passing
+ * through it. 1 threat found.
+ */
+
+const LENS: SpriteDef = {
+  rows: [
+    '.........................',
+    '......ooohhhooo..........',
+    '.....ohhhhhhhhho.........',
+    '....ohhhhhhhhhllo........',
+    '...ohhhookkkoolllo.......',
+    '..ohhhokkkrkkkolllo......',
+    '..ohhokrkkRkkrkolmo......',
+    '.ohhhkkkRrrrRkkkmmmo.....',
+    '.ohhokkkrwrwrkkkommo.....',
+    '.ohhokrRrrrrrRrkommo.....',
+    '.ohhokkkrrrrrkkkommo.....',
+    '.ohhokkkRrrrRkkkommo.....',
+    '.ohhhkkrkkRkkrkkmmmo.....',
+    '..ohlokkkkrkkkkommo......',
+    '..olllokkkkkkkommmo......',
+    '...olllookkkoommmd.......',
+    '....ollmmmmmmmmmomd......',
+    '.....ommmmmmmmmolmmd.....',
+    '......ooommmooo..lmdd....',
+    '..................lmdd...',
+    '...................lmmd..',
+    '....................lmmd.',
+    '.....................l...',
+  ],
+  decorate({ gw, nx, ny, glyphs, lit }) {
+    for (let gx = 0; gx < gw; gx++) lit(gx, ny + 9, COLOR.cyan, 0.4);
+    glyphs('!', nx + 20, ny + 1, COLOR.red, 0.95);
+  },
+};
+
+/**
+ * Phishing: an envelope on a hook, dangled under the surface. A curious fish
+ * noses in; bubbles rise.
+ */
+
+const HOOK: SpriteDef = {
+  rows: [
+    '.............g.......',
+    '.............g.......',
+    '.............g.......',
+    '............oGo......',
+    '............G.G......',
+    '............oGo......',
+    '............owG......',
+    '............owG......',
+    '.......o....owG......',
+    '......owo...owG......',
+    '......owo...owG......',
+    '......owwo..owG......',
+    '......owowo.owG......',
+    '......owoo..owo......',
+    '..GGGGowooGoowoGGGG..',
+    '..GGwwoowooowoowwGG..',
+    '..GwGGwowwwwwowGGwG..',
+    '..GwwwGGoooooGGwwwG..',
+    '..GwwwwwGwwwGwwwwwG..',
+    '..GwwwwwwGGGwwwwwwG..',
+    '..GwwwwwwwwwwwwwwwG..',
+    '..GwwwwwwwwwwwwwwwG..',
+    '..GGGGGGGGGGGGGGGGG..',
+    '.....................',
+  ],
+  decorate({ gw, nx, ny, rnd, pal, lit }) {
+    for (let gx = 0; gx < gw; gx++) if ((gx + 1) % 4 !== 0) lit(gx, Math.round(Math.sin(gx * 0.7)), COLOR.cyan, 0.35);
+    const FISH = ['..###...#', '.#####.##', '#.######.', '.#####.##', '..###...#'];
+    const fx = Math.max(0, nx - 12), fy = ny + 14;
+    FISH.forEach((row, dy) => [...row].forEach((ch, dx) => { if (ch === '#') lit(fx + 8 - dx, fy + dy, pal.l, 0.55); }));
+    for (let i = 0; i < 9; i++) lit(nx + 22 + Math.floor(rnd() * 8), ny + 3 + Math.floor(rnd() * 18), COLOR.cyan, 0.2 + rnd() * 0.35);
+  },
+};
+
+/**
+ * Compiler: two meshed gears grinding source into machine code.
+ */
+
+const GEARS: SpriteDef = {
+  rows: [
+    '.............................',
+    '...................o...o.....',
+    '..................oho.oho....',
+    '..................ohhohlo....',
+    '......oo...oo......oholo.....',
+    '.....oho...oho..oooho.olooo..',
+    '......ohoooho...ohho...ommo..',
+    '.....ohhhhhllo..ooolo.omooo..',
+    '..o.ohhhhhllllo.o..olomo.....',
+    '.ohohhhhhllllllomoollommo....',
+    '.oohhhhhooollllmooolo.omo....',
+    '...ohhho...ollmo...o...o.....',
+    '...ohhlo...olmmo.............',
+    '...ohllo...ommmo.............',
+    '.oohllllooommmmmoo...........',
+    '.ohollllllmmmmmomo...........',
+    '..o.ollllmmmmmo.o............',
+    '.....ollmmmmmo...............',
+    '......omooomo................',
+    '.....omo...omo...............',
+    '......oo...oo................',
+    '.............................',
+  ],
+  decorate({ sw, nx, ny, glyphs, lit }) {
+    glyphs('{}', Math.max(1, nx - 10), ny + 12, COLOR.cyan, 0.85);
+    for (let gx = nx - 2; gx < nx + 1; gx++) lit(gx, ny + 14, COLOR.cyan, 0.4);
+    glyphs('01', nx + sw + 2, ny + 4, COLOR.cyan, 0.85);
+    glyphs('10', nx + sw + 2, ny + 11, COLOR.cyan, 0.45);
+  },
+};
+
+/**
+ * Recursion: a monitor showing a monitor showing a monitor. See: Recursion.
+ */
+
+const SCREENS: SpriteDef = {
+  rows: [
+    'ooooooooooooooooooooooooooo',
+    'ohhhhhhhhhhhhhhhhhhhhhhhhho',
+    'ohnnnnnnnnnnnnnnnnnnnnnnnmo',
+    'ohnnnnooooooooooooooonnnnmo',
+    'ohnnnnohhhhhhhhhhhhhonnnnmo',
+    'ohnnnnohnnnooooonnnmonnnnmo',
+    'ohnnnnohnnnohchonnnmonnnnmo',
+    'ohnnnnohnnnohmmonnnmonnnnmo',
+    'ohnnnnohnnnooooonnnmonnnnmo',
+    'ohnnnnohnnommmmmonnmonnnnmo',
+    'ohnnnnohnnnnnnnnnnnmonnnnmo',
+    'ohnnnnohmmmmmmmmmmmmonnnnmo',
+    'ohnnnnooooooooooooooonnnnmo',
+    'ohnnnnnnnnnnolonnnnnnnnnnmo',
+    'ohnnnnnnnnnnolonnnnnnnnnnmo',
+    'ohnnnnnnnnommmmmonnnnnnnnmo',
+    'ohnncnnnnnnnnnnnnnnnnncnnmo',
+    'ohmmmmmmmmmmmmmmmmmmmmmmmmo',
+    'ooooooooooooooooooooooooooo',
+    '............olo............',
+    '............olo............',
+    '............olo............',
+    '..........ommmmmo..........',
+  ],
+  decorate({ gw, gh, sw, nx, ny, pal, lit }) {
+    // Zoom lines from the outer screen's corners out to the window's.
+    const corners: [number, number, number, number][] = [[nx, ny, 0, 0], [nx + sw - 1, ny, gw - 1, 0], [nx, ny + 18, 0, gh - 1], [nx + sw - 1, ny + 18, gw - 1, gh - 1]];
+    for (const [sx, sy, ex, ey] of corners) {
+      const n = Math.max(Math.abs(ex - sx), Math.abs(ey - sy));
+      for (let k = 1; k <= n; k += 2) lit(Math.round(sx + (ex - sx) * k / n), Math.round(sy + (ey - sy) * k / n), pal.l, 0.4);
+    }
+  },
+};
+
+/**
+ * Encryption: a heavy padlock, ciphertext drifting around it. Good luck.
+ */
+
+const PADLOCK: SpriteDef = {
+  shadeRight: true,
+  rows: [
+    '.....................',
+    '.........ooo.........',
+    '.......owwGGGo.......',
+    '.....owwwwGGGGGo.....',
+    '....owwwwoooGGGGo....',
+    '....owwo.....oGGo....',
+    '...owwo.......oGGo...',
+    '...owwo.......oGGo...',
+    '...oww.........GGo...',
+    '...owwo.......oGGo...',
+    '..ooooooooooooooooo..',
+    '.ohhhhhhhhhhhhhhhhho.',
+    '.ohGlllllllllllllGlo.',
+    '.ohllllllllllllllllo.',
+    '.ohllllllnnnlllllllo.',
+    '.ohllllllnnnlllllllo.',
+    '.ohllllllnnnlllllllo.',
+    '.ohlllllllnllllllllo.',
+    '.ohlllllllnllllllllo.',
+    '.ohlllllllnllllllllo.',
+    '.ohGlllllllllllllGlo.',
+    '.ohmmmmmmmmmmmmmmmmo.',
+    '..ooooooooooooooooo..',
+    '.....................',
+  ],
+  decorate({ gw, gh, sw, nx, rnd, pal, glyphs }) {
+    const HEX = '0123456789ABCDEF';
+    for (let y = 1; y + 5 <= gh; y += 6) for (const x0 of [1, nx + sw + 2]) {
+      for (let x = x0; x + 3 <= (x0 === 1 ? nx - 1 : gw); x += 4) glyphs(HEX[Math.floor(rnd() * 16)], x, y, pal.m, 0.15 + rnd() * 0.3);
+    }
+  },
+};
+
 type SpriteDrawer = (ctx: CanvasRenderingContext2D, rnd: () => number, ax: number, ay: number, aw: number, ah: number, col: string) => void;
 
 const draw = (def: SpriteDef): SpriteDrawer => (ctx, rnd, ax, ay, aw, ah, col) => drawSprite(ctx, rnd, ax, ay, aw, ah, col, def);
@@ -542,4 +1109,17 @@ export const PIXEL_SPRITES: Record<PixelSprite, SpriteDrawer> = {
   calendar: draw(CALENDAR),
   honeypot: draw(HONEYPOT),
   firewall: draw(FIREWALL),
+  fork: draw(FORK),
+  trash: draw(TRASH),
+  hdd: draw(HDD),
+  rack: draw(RACK),
+  cache: draw(CACHE),
+  cart: draw(MINER),
+  door: draw(DOOR),
+  bandaid: draw(PATCH),
+  magnifier: draw(LENS),
+  hook: draw(HOOK),
+  gears: draw(GEARS),
+  screens: draw(SCREENS),
+  padlock: draw(PADLOCK),
 };
