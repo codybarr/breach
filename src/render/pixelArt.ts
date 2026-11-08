@@ -10,7 +10,7 @@ import { COLOR } from './ui';
  *   o outline   d dark   m mid   l light   h highlight
  *   n hole (near black)  k cast shadow
  *   c cyan glow   g / G dark / light grey   w white   e / E light / dark leaf
- *   . empty
+ *   a / A amber / dark amber (honey, wood)   f flame orange   . empty
  */
 
 const mix = (a: string, b: string, t: number) => {
@@ -34,11 +34,14 @@ function palette(col: string): Record<string, string> {
     w: COLOR.white,
     e: COLOR.green,
     E: mix(COLOR.green, '#000000', 0.5),
+    a: COLOR.amber,
+    A: mix(COLOR.amber, '#000000', 0.45),
+    f: '#ff6a2a',
   };
 }
 
 /** Shades drawn with a soft glow. */
-const GLOWS = new Set(['h', 'c']);
+const GLOWS = new Set(['h', 'c', 'a', 'f']);
 
 /** Darken one step, for the side turned away from the light. */
 const SHADE_DOWN: Record<string, string> = { h: 'l', l: 'm', m: 'd', d: 'o' };
@@ -435,6 +438,95 @@ const CALENDAR: SpriteDef = {
   },
 };
 
+/**
+ * Honeypot: a fat clay pot brimming with glowing honey, dripping down its sides
+ * and over a honeycomb label, dipper left in. Curious packets drift in to taste.
+ */
+const HONEYPOT: SpriteDef = {
+  shadeRight: true,
+  rows: [
+    '...................oAo.....',
+    '..................oAo......',
+    '.................oAo.......',
+    '................oAo........',
+    '...oooooooooooooAooooooo...',
+    '...oaaaaaaaaaaaaAaaaaaAo...',
+    '...oaaaaaaaaaaaaAaaaaaAo...',
+    '...omaaaaaaaaaAmaaaaaAmo...',
+    '.....oaaAddaaaAddaaaAo.....',
+    '....ohaAlllaaaAlllaaAlo....',
+    '...ohlaAllllaAllllaAlllo...',
+    '..ohllllllllaAllllaAllllo..',
+    '.ohlllllllGGGGGGGlaAlllllo.',
+    '.ohlllllllGGaaaGGllllllllo.',
+    '.ohlllllllGaGGGaGllllllllo.',
+    '.ohlllllllGGaaaGGllllllllo.',
+    '.ohlllllllGGGGGGGllllllllo.',
+    '..ohllllllllllllllllllllo..',
+    '...ohllllllllllllllllllo...',
+    '.....ooooooooooooooooo.....',
+    '......kkkkkkkkkkkkkkk......',
+  ],
+  // Curious packets buzz in from all sides, each trailing a wiggly dotted path.
+  decorate({ gw, gh, sw, nx, ny, rnd, lit }) {
+    const cx = nx + sw / 2, cy = ny + 7;
+    const flies: [number, number][] = [[3, 3], [6, 15], [2, 22], [gw - 4, 4], [gw - 7, 14], [gw - 3, 21]];
+    for (const [fx, fy] of flies) {
+      const dx = cx - fx, dy = cy - fy, len = Math.hypot(dx, dy);
+      const ux = dx / len, uy = dy / len, phase = rnd() * 6;
+      for (let i = 0; i <= 6; i++) {
+        const t = i * 1.5, w = Math.sin(phase + i * 1.3) * 1.2;
+        lit(Math.round(fx - ux * t - uy * w), Math.round(Math.min(gh - 1, fy - uy * t + ux * w)), COLOR.cyan, 0.75 - i * 0.1);
+      }
+      lit(Math.round(fx + ux), Math.round(fy + uy), COLOR.cyan, 0.95);
+    }
+  },
+};
+
+/**
+ * Firewall: a brick wall crowned in flame. Packets fly in from the left, hit
+ * it and drop. DROP ALL INPUT.
+ */
+const FIREWALL: SpriteDef = {
+  rows: [
+    '.....ff...f....faf.....ff....',
+    '....faf..ff...faaf....faf..f.',
+    '...faaf.faf..faaaff..faaf.ff.',
+    '..faaaffaaf.faawaaf.faaaffaf.',
+    '.ffaawaaaaffaawwaafffaawaaaf.',
+    '.faawwaaaafaawwwwaafaawwaaaff',
+    'ffawwwwaaaaawwwwwaaaawwwwaaff',
+    'faawwwwwaaawwwwwwwaawwwwwaaaf',
+    'ooooooooooooooooooooooooooooo',
+    'olllllolllllolllllolllllolllo',
+    'ommmmmommmmmommmmmommmmmommmo',
+    'odddddodddddodddddodddddodddo',
+    'ooooooooooooooooooooooooooooo',
+    'ollolllllolllllolllllollllloo',
+    'ommommmmmommmmmommmmmommmmmoo',
+    'oddodddddodddddodddddodddddoo',
+    'ooooooooooooooooooooooooooooo',
+    'olllllolllllolllllolllllolllo',
+    'ommmmmommmmmommmmmommmmmommmo',
+    'odddddodddddodddddodddddodddo',
+    'ooooooooooooooooooooooooooooo',
+    '.kkkkkkkkkkkkkkkkkkkkkkkkkkk.',
+  ],
+  // Inbound streams on the left, each ending in a packet that falls away dead
+  // at the wall; sparks lift off the flames.
+  decorate({ nx, ny, sw, gw, rnd, pal, lit }) {
+    for (const y of [ny + 11, ny + 15, ny + 19]) {
+      for (let gx = 0; gx < nx - 2; gx += 2) lit(gx, y, COLOR.cyan, 0.15 + 0.75 * (gx / nx));
+      for (let i = 1; i <= 4; i++) lit(nx - 1 - (i >> 1), y + i, COLOR.red, 0.8 - i * 0.17);
+    }
+    for (let i = 0; i < 14; i++) {
+      const gx = nx + Math.floor(rnd() * sw), gy = ny - 1 - Math.floor(rnd() * 3) + Math.floor(rnd() * 4);
+      lit(gx, gy, rnd() < 0.5 ? COLOR.amber : '#ff6a2a', 0.3 + rnd() * 0.5);
+    }
+    void gw; void pal;
+  },
+};
+
 type SpriteDrawer = (ctx: CanvasRenderingContext2D, rnd: () => number, ax: number, ay: number, aw: number, ah: number, col: string) => void;
 
 const draw = (def: SpriteDef): SpriteDrawer => (ctx, rnd, ax, ay, aw, ah, col) => drawSprite(ctx, rnd, ax, ay, aw, ah, col, def);
@@ -448,4 +540,6 @@ export const PIXEL_SPRITES: Record<PixelSprite, SpriteDrawer> = {
   bot: draw(BOT),
   skull: draw(SKULL),
   calendar: draw(CALENDAR),
+  honeypot: draw(HONEYPOT),
+  firewall: draw(FIREWALL),
 };

@@ -6,7 +6,7 @@ export type CardKind = 'currency' | 'data' | 'malware' | 'program';
 export type DotModel = 'cpu' | 'honeypot';
 
 /** Flat pixel-art sprites available as card art (drawn in render/pixelArt). */
-export type PixelSprite = 'nose' | 'kiddie' | 'horse' | 'toaster' | 'bot' | 'skull' | 'calendar';
+export type PixelSprite = 'nose' | 'kiddie' | 'horse' | 'toaster' | 'bot' | 'skull' | 'calendar' | 'honeypot' | 'firewall';
 
 export interface CardDef {
   id: string;
@@ -108,7 +108,7 @@ const defs: CardDef[] = [
     id: 'firewall', name: 'Firewall', cost: 2, kind: 'program', daemon: true,
     text: '+2 Cards\nDaemon: while in your\nhand, blocks Exploits\ntargeting you.',
     flavor: 'DROP ALL INPUT',
-    art: ['|#|#|#|', '|#|#|#|', '|#|#|#|'],
+    art: ['|#|#|#|', '|#|#|#|', '|#|#|#|'], sprite: 'firewall',
     *effect(c) { c.draw(2); },
   },
   {
@@ -272,7 +272,7 @@ const defs: CardDef[] = [
     id: 'honeypot', name: 'Honeypot', cost: 4, kind: 'program', daemon: true,
     text: '+2 CR\nDaemon: while in hand,\nblocks Exploits and\nBreaches attacker 2.',
     flavor: 'come on in. it is warm.',
-    art: ['  ___  ', ' (___) ', ' |HNY| ', ' |___| '], model: 'honeypot',
+    art: ['  ___  ', ' (___) ', ' |HNY| ', ' |___| '], sprite: 'honeypot',
     *effect(c) { c.credits(2); },
   },
   {
