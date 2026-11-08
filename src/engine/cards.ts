@@ -6,7 +6,7 @@ export type CardKind = 'currency' | 'data' | 'malware' | 'program';
 export type DotModel = 'cpu' | 'honeypot';
 
 /** Flat pixel-art sprites available as card art (drawn in render/pixelArt). */
-export type PixelSprite = 'nose' | 'kiddie';
+export type PixelSprite = 'nose' | 'kiddie' | 'horse' | 'toaster' | 'bot' | 'skull' | 'calendar';
 
 export interface CardDef {
   id: string;
@@ -155,7 +155,7 @@ const defs: CardDef[] = [
     id: 'trojan', name: 'Trojan', cost: 5, kind: 'program', exploit: true,
     text: '+2 Cards\nExploit: opponent\ngains a Malware.',
     flavor: 'totally_legit_installer.exe',
-    art: ['  _/\\_ ', ' |o  o|', ' |____|', '  |  | '],
+    art: ['  _/\\_ ', ' |o  o|', ' |____|', '  |  | '], sprite: 'horse',
     *effect(c) {
       c.draw(2);
       yield* c.exploit(function* (t) { t.gain('malware', 'discard'); });
@@ -165,7 +165,7 @@ const defs: CardDef[] = [
     id: 'ddos', name: 'DDoS', cost: 5, kind: 'program', exploit: true,
     text: '+1 CR\nExploit: Breach 3.',
     flavor: '10,000 toasters, one target.',
-    art: ['> > > >', ' > > > ', '> > > >', ' >>>>[]'],
+    art: ['> > > >', ' > > > ', '> > > >', ' >>>>[]'], sprite: 'toaster',
     *effect(c) {
       c.credits(1);
       yield* c.exploit(function* (t) { t.breach(3); });
@@ -175,7 +175,7 @@ const defs: CardDef[] = [
     id: 'botnet', name: 'Botnet', cost: 4, kind: 'program', exploit: true, givesCycles: 1,
     text: '+1 Card\n+1 Cycle\nExploit: Breach 1 per\nBotnet you have in play.',
     flavor: 'we are legion. we are cheap.',
-    art: ['o-o-o-o', '|\\|/|\\|', 'o-o-o-o'],
+    art: ['o-o-o-o', '|\\|/|\\|', 'o-o-o-o'], sprite: 'bot',
     *effect(c) {
       c.draw(1); c.cycles(1);
       const n = c.me.inPlay.filter((x) => x.def === 'botnet').length;
@@ -252,7 +252,7 @@ const defs: CardDef[] = [
     id: 'rootkit', name: 'Rootkit', cost: 6, kind: 'program', exploit: true,
     text: '+2 CR\nExploit: Breach 2.\nOpponent gains a\nMalware.',
     flavor: 'it was here before you were.',
-    art: ['  ___  ', ' (o o) ', '/|_#_|\\', ' // \\\\ '],
+    art: ['  ___  ', ' (o o) ', '/|_#_|\\', ' // \\\\ '], sprite: 'skull',
     *effect(c) {
       c.credits(2);
       yield* c.exploit(function* (t) { t.breach(2); t.gain('malware', 'discard'); });
@@ -262,7 +262,7 @@ const defs: CardDef[] = [
     id: 'zeroday', name: 'Zero-Day', cost: 5, kind: 'program', exploit: true,
     text: 'Exploit: Breach 6.\nTrash this card.',
     flavor: 'works exactly once.',
-    art: ['  ___  ', ' | 0 | ', ' |DAY| ', ' |___| '],
+    art: ['  ___  ', ' | 0 | ', ' |DAY| ', ' |___| '], sprite: 'calendar',
     *effect(c) {
       yield* c.exploit(function* (t) { t.breach(6); });
       c.trashSelf();
