@@ -1,15 +1,11 @@
 import * as THREE from 'three';
 
-/** Barrel distortion strength. Shared with Stage so mouse picking follows the curve. */
-export const CRT_CURVE = 0.035;
-
 export const CrtShader = {
   uniforms: {
     tDiffuse: { value: null as THREE.Texture | null },
     uTime: { value: 0 },
     uGlitch: { value: 0 },
     uRes: { value: new THREE.Vector2(1, 1) },
-    uCurve: { value: CRT_CURVE },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -17,17 +13,14 @@ export const CrtShader = {
   `,
   fragmentShader: /* glsl */ `
     uniform sampler2D tDiffuse;
-    uniform float uTime, uGlitch, uCurve;
+    uniform float uTime, uGlitch;
     uniform vec2 uRes;
     varying vec2 vUv;
 
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
     void main() {
-      vec2 c = vUv * 2.0 - 1.0;
-      c += c * dot(c, c) * uCurve;
-      vec2 uv = c * 0.5 + 0.5;
-      if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
+      vec2 uv = vUv;
 
       // Glitch: horizontal tearing bands.
       float band = floor(uv.y * 38.0 + floor(uTime * 24.0) * 7.0);
@@ -53,10 +46,6 @@ export const CrtShader = {
       col *= 0.96 + 0.04 * roll;
       col *= 0.985 + 0.015 * sin(uTime * 113.0);
       col += (hash(uv * uRes + uTime) - 0.5) * 0.035;
-
-      // Vignette.
-      float vig = smoothstep(1.55, 0.45, length(c * vec2(0.92, 1.0)));
-      col *= vig;
 
       gl_FragColor = vec4(col, 1.0);
     }

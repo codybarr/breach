@@ -5,7 +5,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { Background } from './background';
-import { CRT_CURVE, CrtShader } from './crt';
+import { CrtShader } from './crt';
 
 /** Virtual resolution. Every layout coordinate in the game uses this space (y-up, origin bottom-left). */
 export const VW = 1600;
@@ -46,6 +46,8 @@ export class Stage {
   private press: { id: number; target: THREE.Object3D | null; wasOpen: THREE.Object3D | null; x: number; y: number; moved: boolean } | null = null;
   /** The card a touch selected. It stays selected after the finger lifts. */
   private touchInspected: THREE.Object3D | null = null;
+  /** Hidden element whose padding reports the notch insets, which CSS exposes only through env(). */
+  private safeArea = document.createElement('div');
 
   constructor(parent: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -68,7 +70,12 @@ export class Stage {
     this.composer.addPass(this.crt);
     this.composer.addPass(new OutputPass());
 
+    this.safeArea.style.cssText =
+      'position:fixed;visibility:hidden;width:0;height:0;padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)';
+    document.body.appendChild(this.safeArea);
     window.addEventListener('resize', () => this.resize());
+    // iOS can update the insets after the resize event when the phone rotates.
+    new ResizeObserver(() => this.resize()).observe(this.safeArea, { box: 'border-box' });
     this.resize();
 
     const el = this.renderer.domElement;
@@ -140,8 +147,10 @@ export class Stage {
 
   private fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
-    // Fit the virtual area inside the window, extending the visible world on the longer axis.
-    const scale = Math.min(w / VW, h / (this.current?.fitHeight ?? VH));
+    const safe = getComputedStyle(this.safeArea);
+    const inset = Math.max(parseFloat(safe.paddingLeft) || 0, parseFloat(safe.paddingRight) || 0);
+    // Fit the virtual area inside the notch-safe window, extending the visible world on the longer axis.
+    const scale = Math.min((w - inset * 2) / VW, h / (this.current?.fitHeight ?? VH));
     const ww = w / scale, wh = h / scale;
     this.camera.left = VW / 2 - ww / 2;
     this.camera.right = VW / 2 + ww / 2;
@@ -180,13 +189,8 @@ export class Stage {
 
   private setPointer(e: PointerEvent) {
     const r = this.renderer.domElement.getBoundingClientRect();
-    // Screen UV -> apply the same barrel curve the CRT shader uses, so picking matches what you see.
-    let u = (e.clientX - r.left) / r.width;
-    let v = 1 - (e.clientY - r.top) / r.height;
-    const cx = u * 2 - 1, cy = v * 2 - 1;
-    const k = (cx * cx + cy * cy) * CRT_CURVE;
-    u = (cx + cx * k) * 0.5 + 0.5;
-    v = (cy + cy * k) * 0.5 + 0.5;
+    const u = (e.clientX - r.left) / r.width;
+    const v = 1 - (e.clientY - r.top) / r.height;
     this.ndc.set(u * 2 - 1, v * 2 - 1);
     const c = this.camera;
     this.pointer.set(c.left + u * (c.right - c.left), c.bottom + v * (c.top - c.bottom));
