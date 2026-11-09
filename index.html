@@ -30,6 +30,15 @@
                         font: 20px "Share Tech Mono", monospace; text-shadow: 0 0 6px #33ff8888; }
       .mobile-overlay .mo-title { font: 44px "VT323", monospace; letter-spacing: 4px; }
       .mobile-overlay .mo-dim { opacity: 0.55; font-size: 15px; }
+      .text-edit { position: fixed; inset: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center;
+                   align-content: flex-start; justify-content: center; gap: 10px; padding: 10px 16px;
+                   background: rgba(0, 0, 0, 0.94); color: #33ff88; font: 20px "Share Tech Mono", monospace; }
+      .text-edit input { flex: 0 1 280px; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 0 10px;
+                         background: #021008; color: #33ff88; border: 1px solid #33ff88; border-radius: 0;
+                         font: 20px "Share Tech Mono", monospace; -webkit-user-select: text; user-select: text; }
+      .text-edit button { min-height: 44px; padding: 0 16px; background: transparent; color: #33e0ff;
+                          border: 1px solid #33e0ff; border-radius: 0; font: 22px "VT323", monospace;
+                          touch-action: manipulation; }
       #boot { position: fixed; inset: 0; display: grid; place-items: center; color: #33ff88;
               font: 18px monospace; letter-spacing: 2px; }
     </style>

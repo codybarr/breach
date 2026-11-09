@@ -99,6 +99,50 @@ export function setupMobile() {
   sync();
 }
 
+/** Canvas text can't raise a phone keyboard, so touch edits happen in a real input pinned above it. */
+export function promptText(opts: { title: string; value: string; maxLength: number; clean: (s: string) => string; onDone: (v: string) => void }) {
+  const form = el('form', 'text-edit');
+  const input = el('input', '');
+  input.value = opts.value;
+  input.maxLength = opts.maxLength;
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.setAttribute('autocapitalize', 'characters');
+  input.setAttribute('autocorrect', 'off');
+  input.enterKeyHint = 'done';
+  input.setAttribute('aria-label', opts.title);
+  const ok = el('button', '', 'OK');
+  const cancel = el('button', '', 'CANCEL');
+  cancel.type = 'button';
+  form.append(el('span', '', opts.title), input, ok, cancel);
+  document.body.append(form);
+
+  const close = () => {
+    form.remove();
+    window.scrollTo(0, 0); // iOS leaves the page shifted after its keyboard closes
+  };
+  input.addEventListener('input', () => {
+    const clean = opts.clean(input.value);
+    if (clean === input.value) return;
+    const caret = input.selectionStart;
+    input.value = clean; // assigning moves the caret to the end
+    input.setSelectionRange(caret, caret);
+  });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    close();
+    opts.onDone(input.value);
+  });
+  cancel.addEventListener('click', close);
+  // Keep typing away from the scene's own keyboard handling.
+  form.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') close();
+  });
+  input.focus();
+  input.select();
+}
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text = '') {
   const e = document.createElement(tag);
   e.className = cls;

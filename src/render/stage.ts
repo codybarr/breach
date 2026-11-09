@@ -105,6 +105,8 @@ export class Stage {
       this.ndc.set(-10, -10);
     });
     el.addEventListener('pointerleave', () => this.ndc.set(-10, -10));
+    // Pointer events handle all input; the mouse events a tap also generates would land on whatever it just opened.
+    el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
     // Android raises a context menu on long-press, which would interrupt the touch.
     el.addEventListener('contextmenu', (e) => { if (this.press) e.preventDefault(); });
     window.addEventListener('keydown', (e) => this.current?.onKey?.(e));
