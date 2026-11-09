@@ -2,7 +2,7 @@
 
 Play: [https://breach.codybarr.dev](https://breach.codybarr.dev)
 
-![BREACH.EXE gameplay](docs/screenshot.png)
+![BREACH.EXE gameplay](screenshot.png)
 
 ## Tech
 

@@ -3,6 +3,9 @@
 - [x] Add a game timer to the playing screen.
 - [x] Allow players to read the rules and view a glossary during the game.
 - [x] Don't let players accidentally buy Malware cards
+- [ ] Add red fracturing line animation whenver you take damage
+- [ ] Randomly picked AI personalities (some play more aggressively, some play more defensively)
+- [ ] Harder hard mode - investigate AI strategies
 - [ ] Create a "PVE" multiplayer game mode - where 3-4 people can play against the computer together
 - [ ] Add "captcha" as a daemon card
 - [ ] Add "cloud compute" as a card (not sure which category - probably generic green program
