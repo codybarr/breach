@@ -323,7 +323,8 @@ function drawFace(d: CardDef): HTMLCanvasElement {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const fl = d.flavor.split('\n').join(' // ');
-    ctx.fillText(`"${fl}"`, TW / 2, 376);
+    const lines = wrap(ctx, `"${fl}"`, TW - 60);
+    lines.forEach((ln, i) => ctx.fillText(ln, TW / 2, 376 + (i - (lines.length - 1) / 2) * 14));
     ctx.restore();
   }
   ctx.save();

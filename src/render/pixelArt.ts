@@ -1190,6 +1190,1165 @@ const BUG: SpriteDef = {
   },
 };
 
+/** Hello World: a tiny CRT says HELLO in a big speech bubble, despite being unplugged. */
+const HELLO: SpriteDef = {
+  rows: [
+    '...........ooooooooooooooooooooooo..',
+    '..........ohhhhhhhhhhhhhhhhhhhhhhho.',
+    '.........ohnnnnnnnnnnnnnnnnnnnnnnnmo',
+    '.........ohnnhnhnhhhnhnnnhnnnhhhnnmo',
+    '.........ohnnhnhnhnnnhnnnhnnnhnhnnmo',
+    '.........ohnnhhhnhhnnhnnnhnnnhnhnnmo',
+    '.........ohnnhnhnhnnnhnnnhnnnhnhnnmo',
+    '.........ohnnhnhnhhhnhhhnhhhnhhhnnmo',
+    '.........ohnnnnnnnnnnnnnnnnnnnnnnnmo',
+    '..........ommmmmmmmmmmmmmmmmmmmmmmo.',
+    '...........oollllloooooooooooooooo..',
+    '............olllo...................',
+    '...oooooooooooooo...................',
+    '..ohhhhhhhhhhhhhmo..................',
+    '..ohldnnnnnnnndlmo..................',
+    '..ohlnncnnnnnnnlmo..................',
+    '..ohlnnncnnnnnnlmo..................',
+    '..ohlnncnncccnnlmo..................',
+    '..ohldnnnnnnnndlmo..................',
+    '..ohllllllllGlalmommmmmmmmm.........',
+    '..ommmmmmmmmmmmmmo.........m...GGGw.',
+    '...oooooooooooooo...........mmmGGG..',
+    '....omllllllllmo...............GGGw.',
+    '....kkkkkkkkkkkk...............kkkk.',
+  ],
+  // Sparks off the dangling plug.
+  decorate({ nx, ny, sw, lit }) {
+    lit(nx + sw - 1, ny + 19, COLOR.amber, 0.7);
+    lit(nx + sw + 1, ny + 21, COLOR.amber, 0.5);
+    lit(nx + sw, ny + 23, COLOR.amber, 0.35);
+  },
+};
+
+/** Load Balancer: one line splits three ways into three identical servers, packets evenly dealt.
+ * A round robin supervises from the splitter. */
+const BALANCER: SpriteDef = {
+  rows: [
+    '............ooooo...........oooooooooo',
+    '...........ohhllmo..........ohhhhhhhmo',
+    '..........ohlwnllaa.....ooooohlllllmmo',
+    '........oohllrrrrmo....ooclllhnccnlhmo',
+    '........odlllrrrrmo....ollooohlllllmmo',
+    '........oomllrrrrmo...ooloo.ommmmmmmmo',
+    '...........ooooooo...oolco..oooooooooo',
+    '..........ooooooo...oocloo............',
+    '.........ohhhhhhmo..olcoo...oooooooooo',
+    'oooooooooohlllllmo.ooloo....ohhhhhhhmo',
+    'hhhhhhhhhhhlnnnlmoooclooooooohlllllmmo',
+    'lccllcclllllncnllllccllllccllhnccnlhmo',
+    'mmmmmmmmmmmlnnnlmooollooooooohlllllmmo',
+    'oooooooooohlllllmo.ooloo....ommmmmmmmo',
+    '.........ommmmmmmo..olcoo...oooooooooo',
+    '..........ooooooo...oocloo............',
+    '.....................oollo..oooooooooo',
+    '......................ooloo.ohhhhhhhmo',
+    '.......................occooohlllllmmo',
+    '.......................oollllhnccnlhmo',
+    '........................ooooohlllllmmo',
+    '............................ommmmmmmmo',
+    '............................oooooooooo',
+    '.............................kkkkkkkkk',
+  ],
+  // Traffic queues in from the left edge, brightening as it reaches the trunk.
+  decorate({ nx, ny, lit }) {
+    for (let gx = 0; gx < nx; gx++) if (gx % 3 !== 2) lit(gx, ny + 11, COLOR.cyan, 0.3 + 0.6 * gx / nx);
+  },
+};
+
+/** Git Stash: a hand tucking banknotes under the lifted corner of a mattress, for later. */
+const STASH: SpriteDef = {
+  rows: [
+    '........................................',
+    '.......................ooo..............',
+    '......................ohhmo.............',
+    '.....................ohllmo.............',
+    '....................ohllldo.............',
+    '..................oohmllldo.............',
+    'ooo..............ohhlmllldo.............',
+    'oho..oooooooooo.ohlllmllldo.............',
+    'omo.ohhhhhhhhhhohmlllmlmmoAAAAAAAA......',
+    'omo.ohhhhhhhhllolmlllmmddoaaaaaaaA......',
+    'omo.ohhhhhhhlllolmlllmdooaaaaaaaaoooo...',
+    'omo.ooooooooooollmllmdoAAAAAAAoooohhhoGg',
+    'omoohhhhhhhhlmlllmmmdoaaAaaaoohhhhhhloGg',
+    'omoolmlllmlllmlllmddoaaAAAaaaaoooohhloGg',
+    'omoolmlllmlllmlmmdooaaAaAaaaoohhhhhhmoGg',
+    'omoolmlllmlllmmddoaaaaaAAAaaaaoooohhmoGg',
+    'omoolmlllmllmddooaaaaaaaAaAaoohhhhhhmoGg',
+    'omoommmmmmmmdooAaaaaaaaAAAaaaaoooohmmoGg',
+    'omooddddddddokkAaaaaaaaaAaaaaohhhhmmooGg',
+    'omo.ooooooookkkAAAAAAAAAAAAAAAoooooo....',
+    'omoddddddddddddddddddddddddo............',
+    'oooooooooooooooooooooooooooo............',
+    '....odo................odo..............',
+    '....odo................odo..............',
+  ],
+  // A few loose glints around the hiding place.
+  decorate({ nx, ny, rnd, lit }) {
+    for (let i = 0; i < 3; i++) lit(nx + 28 + Math.floor(rnd() * 11), ny + 1 + Math.floor(rnd() * 7), COLOR.amber, 0.25 + rnd() * 0.3);
+  },
+};
+
+/** The Intern: an ID badge on a lanyard, its photo a small nervous face with a grimace and a bead of sweat,
+ * beside a steaming mug with a heart on it. Unpaid, unsupervised, has prod access. */
+const INTERN: SpriteDef = {
+  rows: [
+    'ohlo.........olmo.......................',
+    '.ohlo.......olmo........................',
+    '..ohlo.....olmo.........................',
+    '...ohlo...olmo..........................',
+    '....ohlo.olmo...........................',
+    '.....ohlolmo............................',
+    '......oGGGo.............................',
+    'oooooooGwGooooooo.......................',
+    'ohhhhhonnnohhhhmo.......................',
+    'ohlllllooolllllmo...oooooooooooooo......',
+    'ohooooooooooooomo..ohhhhhhhhhhhhhmo.....',
+    'ohonnllllllnnnomo..ohAAaAAAAAAAAAmo.....',
+    'ohonmmmnmnmmmnomo..ohhhhhhhhhhhhmmo.....',
+    'ohonmmnmmmnmmcomo..ohllllllllllmmdooooo.',
+    'ohonmwwwmwwwmcomo..ohlllnnlnnllmmdolllo.',
+    'ohonmwnwmwnwmnomo..ohllnnnnnnnlmmdooolmo',
+    'ohonmmmmmmmmmnomo..ohlllnnnnnllmmdo.olmo',
+    'ohonmmwnwnwmmnomo..ohllllnnnlllmmdooolmo',
+    'ohonnmmmmmmmnnomo..ohlllllnllllmmdolllo.',
+    'ohooooooooooooomo..ohllllllllllmmdooooo.',
+    'ohlldndnndnndllmo..ommllllllllmmddo.....',
+    'ommmmmmmmmmmmmmmo...ommmmmmmmmmddo......',
+    'ooooooooooooooooo....oooooooooooo.......',
+    '.kkkkkkkkkkkkkkk.....kkkkkkkkkkkk.......',
+  ],
+  // Two wisps of steam rising off the mug, fading as they climb.
+  decorate({ nx, ny, lit }) {
+    for (const [x0, h] of [[24, 8], [30, 9]]) {
+      const wiggle = [0, 1, 1, 0, -1, -1, 0, 1, 1];
+      for (let i = 0; i < h; i++) lit(nx + x0 + wiggle[i], ny + 8 - i, COLOR.white, 0.85 - i * 0.08);
+    }
+  },
+};
+
+/** Rubber Duck: a classic debugging duck in side profile, amber bill shut. Its speech bubble offers only "...". */
+const DUCK: SpriteDef = {
+  rows: [
+    '..............oooooooo..............',
+    '............oohhhhllllmoo...........',
+    '...........ohhhhhllllllmmo..........',
+    '..........ohhhllllllllllmmo.........',
+    '..........ohhllllllllnnnllmo........',
+    '..........ohlllllllllnwnllmo.....ooo',
+    '..........ohlllllllllnnnllmooooooaao',
+    '..........ohllllllllllllllmoaaaaaaao',
+    '..........ohllllllllllllllmoaaaaaaao',
+    '...........ohlllllllllllllmoooooooo.',
+    '............olllllllllllllmoAAAAAo..',
+    '.oo..........olllllllllllmoooooooo..',
+    'ohmo.........olllllllllllmo.........',
+    'ohlmo...ooooohhhllllllllllmo........',
+    'ohllloohhhhhhlllllllllllllllmo......',
+    'ohllllhhhhhhllllllllllllllllllmo....',
+    'ohlllllllhhhllllllllllllllllllmmo...',
+    'ohllllllloooooooooolllllllllllmmo...',
+    'ohllllloollmmmmmmmmoolllllllllmmo...',
+    'omllllommmmmmmmmmmmmmmoooolllllmmo..',
+    'omlllllloodddddddddddddolllllllmmo..',
+    'omllllllloooooooooooollllllllllmmo..',
+    '.omlllllllllllllllllllllllllllmmo...',
+    '..ommmmmmmmmmmmmmmmmmmmmmmmmmmo.....',
+    '....ooooooooooooooooooooooooo.......',
+    '.....kkkkkkkkkkkkkkkkkkkkkkkkkk.....',
+  ],
+  decorate({ nx, ny, lit }) {
+    const left = nx + 30, right = nx + 42, top = ny - 2, bottom = ny + 3;
+    for (let x = left + 1; x < right; x++) {
+      lit(x, top, COLOR.cyan, 0.55);
+      lit(x, bottom, COLOR.cyan, 0.55);
+    }
+    for (let y = top + 1; y < bottom; y++) {
+      lit(left, y, COLOR.cyan, 0.55);
+      lit(right, y, COLOR.cyan, 0.55);
+    }
+    lit(left + 1, bottom + 1, COLOR.cyan, 0.55);
+    for (const dx of [3, 6, 9]) lit(left + dx, ny, COLOR.cyan, 0.95);
+  },
+};
+
+/** Bug Bounty: a torn WANTED poster with a red-eyed beetle's mugshot, pinned up beside the amber coin it pays out. */
+const BOUNTY: SpriteDef = {
+  rows: [
+    '...............gGg......................',
+    '.ooooooooooooooGwGooooooooooooo.........',
+    '.olllllllllllllgGgllllllllllllo.........',
+    '.olnnnnnnnnnnnnnnnnnnnnnnnnnndok........',
+    '.olhnnnhnnhnnhnnhnhhhnhhhnhhndok........',
+    '.olhnnnhnhnhnhhnhnnhnnhnnnhnhdok........',
+    '.olhnhnhnhhhnhnhhnnhnnhhnnhnhdok........',
+    '.olhhnhhnhnhnhnnhnnhnnhnnnhnhdok........',
+    '.olhnnnhnhnhnhnnhnnhnnhhhnhhndok........',
+    '.olnnnnnnnnnnnnnnnnnnnnnnnnnndok........',
+    '.olnnnnnnnnnnnnnnnnnnnnnnnnnndok........',
+    '.olnnnhnnnnhnnnnnnnnnnnnnnnnndooooo.....',
+    '.olnnnnhnnnhnnnnnnnnnnnnnnnnooaaaaaoo...',
+    '.olnnnnnhnnhnnnoooooooonnnnoaaAAAAAaao..',
+    '.olnnnnnoooonnollhhllmmonnoaAwAAAAAAAao.',
+    '.olnnnnohhllooolhhlllmmmonoawAAAaAAAAao.',
+    '.olnnnohwrllolhlllllmmlmooaAwAAaaaaAAAao',
+    '.olnnnolrrllollllllmmlmmooaAAAaAaAAAAAao',
+    '.olnnnolllmmolllllmmlmmmooaAAAAaaaAAAAao',
+    '.olnnnnooooooommmmmmmmoonoaAAAAAaAaAAAao',
+    '.olnnnnnhnnhnnnnnhnnnhnnnoaAAAaaaaAAAAao',
+    '.olnnnnhhnhhnnnnhhnnhhnnnnoaAAAAaAAAAao.',
+    '.olnnddndndnnddndnddnndnddoaAAAAAAAAAao.',
+    '.ooddoodododdoododooddodoodoaaAAAAAaao..',
+    '.o.oo.ko.o.oo.ko.o.koo.o.ko.ooaaaaaoo...',
+    '..k.kk..k.k.kk..k.k..kk.k..k.kooooo.....',
+  ],
+  // A few amber glints coming off the coin.
+  decorate({ nx, ny, rnd, lit }) {
+    for (let i = 0; i < 5; i++) {
+      const x = nx + 32 + Math.floor(rnd() * 9), y = ny + 5 + Math.floor(rnd() * 7);
+      lit(x, y, COLOR.amber, 0.25 + rnd() * 0.45);
+    }
+  },
+};
+
+/** Cron Job: a round wall clock at 3:00, the traditional hour for scheduled jobs to go wrong,
+ * with a dotted orbit coming back around and shedding +1s. */
+const CRON: SpriteDef = {
+  rows: [
+    '..........ooooooo..........',
+    '........ooolhlllooo........',
+    '......oohhhhhlllllloo......',
+    '.....olhhllooooolllllo.....',
+    '....ohhllooonhnooollllo....',
+    '...ohhloonnnnhnnnnoolllo...',
+    '..olhloonlnnnnnnnlnoolllo..',
+    '..ohloonnnnnnhnnnnnnoollo..',
+    '.ohhlonnnnnnhhlnnnnnnollmo.',
+    '.ohlonlnnnnnhhlnnnnnlnommo.',
+    'oohlonnnnnnnhhlnnnnnnnommoo',
+    'olhoonnnnnnnhhlnnnnnnnoommo',
+    'ohhonnnnnnnnnalhhhnnnnnommo',
+    'ollohhnnnnnnaaahhhhnnhhommo',
+    'ollonnnnnnnnnanmmmnnnnnommo',
+    'olloonnnnnnnnnnnnnnnnnoommo',
+    'oollonnnnnnnnnnnnnnnnnoddoo',
+    '.ollonlnnnnnnnnnnnnnlnoddo.',
+    '.olllonnnnnnnnnnnnnnnodddo.',
+    '..olloonnnnnnnnnnnnnooddo..',
+    '..ollloonlnnnnnnnlnoodddo..',
+    '...ollloonnnnhnnnnoodddo...',
+    '....ollllooonhnoooddddo....',
+    '.....olllmmooooodddddo.....',
+    '......oommmmmmmmdddoo......',
+    '........ooommmmmooo........',
+    '..........ooooooo..........',
+    '.....kkkkkkkkkkkkkkkkk.....',
+  ],
+  decorate({ sw, nx, ny, pal, lit, glyphs }) {
+    const cx = nx + (sw - 1) / 2, cy = ny + 13;
+    for (let i = 0; i < 40; i += 2) {
+      const a = -0.5 + (i / 40) * Math.PI * 1.15;
+      lit(Math.round(cx + Math.cos(a) * 17), Math.round(cy + Math.sin(a) * 15.5), pal.l, 0.15 + (1 - i / 40) * 0.55);
+    }
+    for (const [x, y, alpha] of [[nx + sw + 7, ny + 7, 0.9], [nx + sw + 12, ny, 0.4]]) {
+      for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) lit(x + dx, y + 2 + dy, COLOR.amber, alpha);
+      glyphs('1', x + 3, y, COLOR.amber, alpha);
+    }
+  },
+};
+
+/** Backup: a cassette-style data tape labeled BACKUP, two spools in the window, with almost all the tape still on the left. */
+const BACKUP: SpriteDef = {
+  rows: [
+    '.ooooooooooooooooooooooooooooooooooooo.',
+    'oohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhoo',
+    'ohldooooooooooooooooooooooooooooooodlmo',
+    'ohldoohhoooohooohhhoohohoohohoohhoollmo',
+    'ohldoohohoohohoohoooohohoohohoohohollmo',
+    'ohldoohhooohhhoohoooohhooohohoohhoollmo',
+    'ohldoohohoohohoohoooohohoohohoohooollmo',
+    'ohldoohhooohohoohhhoohohoohhhoohooollmo',
+    'ohldlllllllllllllllllllllllllllllllllmo',
+    'ohldmooooooooooooooooooooooooooooomllmo',
+    'ohldmonnnnmmmmmmmnnnnnnnnnnnnnnnnomllmo',
+    'ohldmonnnmlldmddmmnnnnnnnndddnnnnomllmo',
+    'ohldmonnmldmGGGmdmmnnnnnddGGGddnnomllmo',
+    'ohldmonnmdmGGwGGmdmnnnnndGGwGGdnnomllmo',
+    'ohldmonnmdGGnnnGGdmnnnndGGnnnGGdnomllmo',
+    'ohldmonnmmGwnnnwGmmnnnndGwnnnwGdnomllmo',
+    'ohldmonnmdGGnnnGGdmnnnndGGnnnGGdnomllmo',
+    'ohldmonnmdmGGwGGmdmnnnnndGGwGGdnnomllmo',
+    'ohldmonnmmdmGGGmdmmnnnnnddGGGddnnomllmo',
+    'ohldmonnnmmddmddmmddddddnndddnnnnomllmo',
+    'ohldmooooooooooooooooooooooooooooomllmo',
+    'ohldlllllllllllllllllllllllllllllllllmo',
+    'ohlllllllllooooooooooooooooolllllllllmo',
+    'ohllllllllommmnmmmnnnmmmnmmmollllllllmo',
+    'oommmmmmmommmmnmmmnnnmmmnmmmmommmmmmmoo',
+    '.ooooooooooooooooooooooooooooooooooooo.',
+    '..kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..',
+  ],
+  // Rewind chevrons on the left, stray bits drifting back in from the right.
+  decorate({ gw, gh, sw, nx, ny, rnd, pal, lit }) {
+    const cy = ny + 15;
+    for (let i = 0; i < 3; i++) {
+      const x = nx - 4 - i * 4, a = 0.9 - i * 0.28;
+      for (let d = 0; d < 3; d++) { lit(x + d, cy - d, COLOR.cyan, a); lit(x + d, cy + d, COLOR.cyan, a); }
+    }
+    for (let x = nx + sw + 2; x < gw - 1; x += 3) {
+      const t = (x - nx - sw) / (gw - nx - sw);
+      if (rnd() < 0.8) lit(x, cy - 4 + Math.floor(rnd() * 9), pal.l, 0.75 - t * 0.55);
+      if (rnd() < 0.3) lit(x + 1, Math.floor(rnd() * gh), pal.d, 0.45);
+    }
+  },
+};
+
+/** RAID Array: four identical drives on one backplane, three writing the same A1 and one gone dark with a red LED. */
+const RAID: SpriteDef = {
+  rows: [
+    '.......................................',
+    '.......................................',
+    '.......................................',
+    '.......................................',
+    '.......................................',
+    '.......................................',
+    'ooooooooo.ooooooooo.ooooooooo.ooooooooo',
+    'ommmmmmdo.ommmmmmdo.oddddddoo.ommmmmmdo',
+    'oddhhhddo.oddhhhddo.onnmmmnno.oddhhhddo',
+    'odhhhhldo.odhhhhldo.onmmmmdno.odhhhhldo',
+    'ohhhnllmo.ohhhnllmo.ommmndddo.ohhhnllmo',
+    'ohhnnnlmo.ohhnnnlmo.ommnnnddo.ohhnnnlmo',
+    'ohhlnlmmo.ohhlnlmmo.ommdndddo.ohhlnlmmo',
+    'odhllmmdo.odhllmmdo.onmddddno.odhllmmdo',
+    'oddmmmddo.oddmmmddo.onndddnno.oddmmmddo',
+    'odddddddo.odddddddo.onnnnnnno.odddddddo',
+    'oncncnhno.oncncnhno.onrrnnnno.oncncnhno',
+    'oncncnhno.oncncnhno.onrrnnnno.oncncnhno',
+    'ollllllmo.ollllllmo.oddddddoo.ollllllmo',
+    'ooooooooo.ooooooooo.ooooooooo.ooooooooo',
+    '..oGGGo.....oGGGo.....oGGGo.....oGGGo..',
+    'ooooooooooooooooooooooooooooooooooooooo',
+    'ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhmo',
+    'olmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdo',
+    'ooooooooooooooooooooooooooooooooooooooo',
+    '.kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.',
+  ],
+  decorate({ nx, ny, glyphs }) {
+    [0, 10, 30].forEach((x) => glyphs('A1', nx + x + 1, ny, COLOR.cyan, 0.85));
+    glyphs('!', nx + 23, ny, COLOR.red, 0.95);
+  },
+};
+
+/** Container: a translucent plastic leftovers tub with a snap-on tabbed lid and masking-tape label, a tiny program glowing among the leftovers. */
+const CONTAINER: SpriteDef = {
+  rows: [
+    '......oooooooooooooooooooooooooooo......',
+    '....oohhhhhhhhhhhhhhhhhllllllllllloo....',
+    '...ohhllmmmmmmmmmmmmmmmmmmmmmmmmlllmo...',
+    '...ohhllhhhhhhhhhhhhhllllllllllllllmo...',
+    '.oooooooooooooooooooooooooooooooooooooo.',
+    'ohohhhhhhhhhhhhhhhhllllllllllllllllllolo',
+    'olommmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmodo',
+    '.oooooooooooooooooooooooooooooooooooooo.',
+    '....ohdddddddddohhhhlllmodddddddddmo....',
+    '....ohddddddddddollllmmodddmddmdddmo....',
+    '....ohddddhddldddoooooodddddddddddmo....',
+    '....ohdddhddlddddddddddddcccccccddmo....',
+    '.....ohdlddldddddddmdddddcnnnnncdmo.....',
+    '.....ohdddlddddddddddmdddcncnnncdmo.....',
+    '.....ohddddddddddddddddmmcnncnncdmo.....',
+    '.....olmddddmmddddddddmllcncnwwcmmo.....',
+    '.....ollmwwwwwwwwwwddmlllccccccclmo.....',
+    '......ollwGwGGwGwGwmmlllhlllllalmo......',
+    '......olawwwwwwwwwwlllllllllalllmo......',
+    '......olllllallllalllhlllallllllmo......',
+    '......olallllAlhllllllallllAlhllmo......',
+    '.......oommmmmmmmmmmmmmmmmmmmmmoo.......',
+    '.........oooooooooooooooooooooo.........',
+    '........kkkkkkkkkkkkkkkkkkkkkkkk........',
+  ],
+  // A few stray bits rising off the leftovers. Nobody knows how old they are.
+  decorate({ gw, nx, ny, sw, sh, rnd, lit }) {
+    for (let i = 0; i < 8; i++) {
+      const side = i % 2, x = side ? nx + sw + 1 + Math.floor(rnd() * Math.max(1, gw - nx - sw - 2)) : Math.floor(rnd() * Math.max(1, nx - 1));
+      lit(x, ny + Math.floor(rnd() * (sh - 2)), i % 3 ? COLOR.green : COLOR.cyan, 0.2 + rnd() * 0.3);
+    }
+  },
+};
+
+/** Cloud Compute: a puffy cloud with a server rack in its belly, raining binary. There is no cloud. */
+const CLOUD: SpriteDef = {
+  rows: [
+    '...............oooooooo...............',
+    '.............oohhhhhhhhoo.............',
+    '............ohhhhllllllhho............',
+    '...........ohhhllllllllllho...........',
+    '......oooo.ohhllllllllllllho..........',
+    '....oohhhhohhllllllllllllllo..........',
+    '...ohhhhllmlhllllllllllllllmo.ooooo...',
+    '..ohhhlllllmooooooooooooooolo.ohhhho..',
+    '.ohhhllllllmoGGGGGGGGGGGGGollohhlllho.',
+    'ohhhllllllllogcgagggGoGoGgollmlhllllho',
+    'ohhlllllllllooooooooooooooolmlllllllmo',
+    'ohlllllllllloGGGGGGGGGGGGGolllllllllmo',
+    'ohllllllllllogagggcgGoGoGgollllllllmmo',
+    '.ohlllllllllooooooooooooooolllllllmmo.',
+    '..ohmllllllloGGGGGGGGGGGGGollllmmmmo..',
+    '...ooommmmmmogcgcgggGoGoGgommmmmooo...',
+    '......oooooooooooooooooooooooooo......',
+    '......................................',
+    '.......h...........h...........h......',
+    '......hh..........hh..........hh......',
+    '.......h...........h...........h......',
+    '.......h....lll....h....lll....h......',
+    '......hhh...l.l...hhh...l.l...hhh.....',
+    '............l.l.........l.l...........',
+    '............l.l.........l.l...........',
+    '............lll.........lll...........',
+  ],
+  // The rain keeps falling, fading out toward the bottom of the art.
+  decorate({ nx, ny, pal, glyphs }) {
+    glyphs('0', nx + 6, ny + 24, pal.l, 0.5);
+    glyphs('1', nx + 18, ny + 24, pal.l, 0.5);
+    glyphs('0', nx + 30, ny + 24, pal.l, 0.5);
+    glyphs('1', nx + 12, ny + 27, pal.l, 0.25);
+    glyphs('1', nx + 24, ny + 27, pal.l, 0.25);
+  },
+};
+
+/** Sudo: a plain deli ham sandwich on square sliced bread, seen three-quarter. */
+const SUDO: SpriteDef = {
+  rows: [
+    '..........oooooooooooooooooooooooooo....',
+    '.........oddddddddddddddddddddddddddo...',
+    '........odhhhhhhhhhhhhhhhhhhhhhhhhddo...',
+    '.......odhllllllllhllllllllllhlllddoo...',
+    '......odhllllllhllllllllllhlllllddooo...',
+    '.....odhllllhllllllllllhlllllllddooAo...',
+    '....odhllhllllllllllhlllllllllddooARo...',
+    '...ooooooooooooooooooooooooooddooArro...',
+    '..olllllllllllllllllllllllllldooArRRo...',
+    '..ommmmmmmmmmmmmmmmmmmmmmmmmmooArrrro...',
+    '..oddddddddddddddddddddddddddoARRRRRo...',
+    '..oooooooooooooooooooooooooooArrRRrro...',
+    '..oaaaaaaaaaaaaaaaaaaaaaaaaaaRRRrrRRo...',
+    '..owrwrwrwwRRRRwwwrwrwwRRRRRwrRrrrroo...',
+    '.owwrrwrrwrwwwwwrrwrrrrwwwwwrRrRRRodo...',
+    '.orrRRRRRrwwrwrrrRRRRRwwrwrwrrrrRoddo...',
+    'orRRwwwwwRRrrrwRRwwwwwRrrrwrRRRRoddoo...',
+    'orrwrwrwrwwRRRRwwwrwrwwRRRRRwrRoddooo...',
+    'orwwrrwrrwrwwwwwrrwrrrrwwwwwrRoddooo....',
+    '.oorRRRRRrwwrwrrrRRRRRwwrwrwroddooo.....',
+    '..oRrrrrrRRRRRRrrrrrRRRRRRRrrddooo......',
+    '..olRRRRRllllllRRRRRlllllllRRdooo.......',
+    '..ommmmmmmmmmmmmmmmmmmmmmmmmmooo........',
+    '..oddddddddddddddddddddddddddoo.........',
+    '..oooooooooooooooooooooooooooo..........',
+    '...oooooooooooooooooooooooooo...........',
+    '.....kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.....',
+  ],
+  // A few crumbs, escalating.
+  decorate({ nx, ny, sw, lit }) {
+    for (const [x, y, a] of [[-3, 6, 0.7], [-5, 11, 0.4], [sw + 2, 4, 0.7], [sw + 4, 10, 0.4], [2, -2, 0.4]]) lit(nx + x, ny + y, COLOR.cyan, a);
+  },
+};
+
+/** Orchestrator: a gloved fist conducting with a baton, notes in the air and YAML indenting forever below. */
+const ORCHESTRATOR: SpriteDef = {
+  rows: [
+    '....cccccc...........................w',
+    '....cccccc.......cc.................ww',
+    '....c....c.......c.................wwG',
+    '....c....c.......c................wwG.',
+    '..ccc..ccc.....cc................wwG..',
+    '..ccc..ccc.....cc...............wwG...',
+    '...............................wwG....',
+    '....oooo.oooo.oooo.oooo.......wwG.....',
+    '...ohhllohhllohhllohhlmo.....wwG......',
+    '...ohlllohlllohlllohllmo....wwG.......',
+    '...ohlllohlllohlllohllmoooowwG........',
+    '..ooooooooooooooooolllmoaaaoG.........',
+    '.ohhhhhhhhhhhhhhloolllmoaaaAo.........',
+    '.olllllllllllllmmoolllmoaaAAo.........',
+    '..ooooooooooooooooommmdoaAAo..........',
+    '...olllllllllllllllllmo.ooo....ccc....',
+    '...olllllllllllllllllmo........c.c....',
+    '....olllllllllllllllmo.........c......',
+    '.....ommmmmmmmmmmmmdo........ccc......',
+    '......oooooooooooooo.........ccc......',
+    '...ooooooooooooooooooo................',
+    '..ohhhhhhhhhhhhhhhhhhlo...............',
+    '..ohllllllllllllalllmmo...............',
+    '..ommmmmmmmmmmmmmmmmddo...............',
+    '..ooooooooooooooooooooo...............',
+    '.....oddddddddddddddo.................',
+    '.....oooooooooooooooo.................',
+  ],
+  // Off to the right, a YAML block indents itself further and further down.
+  decorate({ gw, sw, nx, ny, rnd, lit }) {
+    for (let i = 0; i < 5; i++) {
+      const y = ny + 17 + i * 2, x = nx + sw - 2 + i * 2, a = 0.8 - i * 0.14;
+      lit(x, y, COLOR.cyan, a);
+      const n = 2 + Math.floor(rnd() * 3);
+      for (let k = 0; k < n && x + 2 + k < gw; k++) lit(x + 2 + k, y, COLOR.green, a);
+    }
+  },
+};
+
+/** Brute Force: a crowbar at a diagonal, its claw throwing sparks on impact, while the password guesses tick up one letter at a time. */
+const CROWBAR: SpriteDef = {
+  rows: [
+    '.............................ooooo......',
+    '...........................oohhhloo.....',
+    '.........................oohhhllllmo....',
+    '........................ohhlllmmmllmo...',
+    '.......................ohhllmooooomlmo..',
+    '......................ohllmdo.....omlmo.',
+    '.....................ohllmdo.......omlo.',
+    '....................ohllmdok.......omlo.',
+    '...................ohllmdok.......omllo.',
+    '..................ohllmdok.......omllmo.',
+    '.................ohllmdok.......omlnlmo.',
+    '................ohllmdok.......omo...omo',
+    '...............ohllmdok........oo.....oo',
+    '..............ohllmdok.........a.......a',
+    '.............ohllmdok............f.w.f..',
+    '............ohllmdok.........a....www..f',
+    '...........ohllmdok...........f....w....',
+    '..........ohllmdok...............f...f..',
+    '.........ohllmdok..............a...f...a',
+    '........ohllmdok........................',
+    '.......ohllmdok.........................',
+    '......ohllmdok..........................',
+    '.....ohhllmmdok.........................',
+    '....ohhlmmdok...........................',
+    '....oooooook............................',
+  ],
+  decorate({ nx, ny, rnd, lit, glyphs }) {
+    ['AAAA', 'AAAB', 'AAAC'].forEach((guess, i) => glyphs(guess, nx - 10, ny + 1 + i * 6, COLOR.cyan, 0.12 + i * 0.16));
+    for (const [dx, dy] of [[8, 0], [7, 5], [5, 7], [-9, 0], [-7, 5], [-5, 7], [0, 8]]) lit(nx + 35 + dx, ny + 15 + dy, COLOR.amber, 0.6);
+    for (let i = 0; i < 4; i++) lit(nx + 31 + Math.floor(rnd() * 9), ny + 25 + Math.floor(rnd() * 4), COLOR.amber, 0.15 + rnd() * 0.2);
+  },
+};
+
+/** Worm: a segmented worm squeezing out of an Ethernet wall jack and grinning,
+ * while a smaller copy of itself buds off its back. */
+const WORM: SpriteDef = {
+  rows: [
+    '.................o......................',
+    '...............ooloo..........ooooooo...',
+    '..............owwlwwo........ohllllllo..',
+    '..............owwlwwo.......ohhwwwlwwwo.',
+    'GGGGGGGGGGGGGGollllmo.......ohhwwnlwwnmo',
+    'GGggggggggggGGoonnnooo.....olllwwnlwwnmo',
+    'GggggggggggggG.ooooolo.....olllwwwlwwwmo',
+    'GgkaAaAaAaAkgG....olloo....olllllllllmmo',
+    'GgkAkAkAkAkkgG....oooolo....ollnllllnmmo',
+    'GgkkkkkkkkkkgG.....olllo....olllnnnnmmoo',
+    'GgkkkkkkkkkkgG.....ollmoo..ooollllmmmmo.',
+    'GgkkkkoooookgG......oooloo.oloommmmmmo..',
+    'GgkkkkohllokgG......ollllooollloooooo...',
+    'Ggkkkolllloooo......oolooohoollllmoo....',
+    'Ggkkkolllohllloooo.oooollollollmmmo.....',
+    'Ggkkkkololhlloolloollohhlolllooooo......',
+    'Ggkkkkooolllolhllohhlolllolllllmo.......',
+    'Gggggkkkolllolllolhlollllollllmmo.......',
+    'Gggggkkkkollolllollllolllloommoo........',
+    'Ggggggggggooolllollllollllmoooo.........',
+    'GGggggggggggGollolllllommmmo............',
+    'GGGGGGGGGGGGGooooolmmmmoooo.............',
+    '..............kkkkoooookkkkkkkkkkkkkkkk.',
+    '.................kkkkkkkkkkkkkkkkkkk....',
+  ],
+  // Copied packets drifting up from the bud.
+  decorate({ nx, ny, sw, rnd, pal, lit }) {
+    for (let i = 0; i < 7; i++) {
+      const x = nx + Math.floor(rnd() * sw), y = Math.max(0, ny - 2) + Math.floor(rnd() * 8);
+      lit(x, y, rnd() < 0.5 ? COLOR.cyan : pal.l, 0.2 + rnd() * 0.4);
+    }
+  },
+};
+
+/**
+ * SQL Injection: a syringe of cyan payload driven into the middle disc of a
+ * stacked-cylinder database, with the obligatory comment-out in the corner.
+ */
+const SQLI: SpriteDef = {
+  rows: [
+    '...c......................oooooooooo....',
+    '...c.c.................ooohhhhhhhhhlooo.',
+    '.......ccc.ccc........ohhhhhhhhhhhhllllo',
+    '.....c................ohhhhhhhhhhhhllllo',
+    '.....c................ohhhhhhhhhhhhllllo',
+    '......................oooohhhhhhhhhloooo',
+    '.....oo...............omhhoooooooooomddo',
+    'oo...hm...............omhhhllllllmnmnddo',
+    'hl...hmoooooooo.......omhhhllllllmmmmddo',
+    'hl...hmhdhdhdhdo......omhhhllllllmmmmddo',
+    'hl...hmllllllllGo.....oooohllllclmmmoooo',
+    'hlooohmnlmwwwwcGg.....omhhooocooocoomddo',
+    'hllllhmllmcccccGgwwwwwwwwwwwcccllmmmmddo',
+    'hlooohmnlmcccccGg.....omhhhllclllmmmmddo',
+    'hl...hmmmmmmmmmGo.....omhhhlllllcmmmmddo',
+    'hl...hmddddddddo......oooohllllllmmmoooo',
+    'hl...hmoooooooo.......omhhoooooooooomddo',
+    'oo...hm...............omhhhllllllmnmnddo',
+    '.....oo...............omhhhllllllmmmmddo',
+    '......................omhhhllllllmmmmddo',
+    '.......................ooohllllllmmmooo.',
+    '..........................oooooooooo....',
+    '........................kkkkkkkkkkkkkk..',
+  ],
+  // A drip off the needle.
+  decorate({ nx, ny, lit }) {
+    for (let i = 0; i < 3; i++) lit(nx + 20, ny + 14 + i * 2, COLOR.cyan, 0.8 - i * 0.25);
+  },
+};
+
+/** Keylogger: a front-on keyboard with one wide eye rising out of its top edge, reading along as seven asterisks go by. All it sees is *******. */
+const KEYLOGGER: SpriteDef = {
+  rows: [
+    '............oooooooooooo............',
+    '..........oooddmmmmmmddooo..........',
+    '........oomlhhhhhhhhhhllmdoo........',
+    '......omloooooooooooooooooomdo......',
+    '.....omowwwwwwccccccccwwwwwwodo.....',
+    '...omowwwwwwwcccnwnncccwwwwwwwodo...',
+    '...omowwwwwwwcccnnnncccwwwwwwwodo...',
+    '.....omowwwwwcccnnnncccwwwwwodo.....',
+    '.......omowwwwccnnnnccwwwwodo.......',
+    '.........oommmmmmmmmmmmmmoo.........',
+    '.oooooooooooooooooooooooooooooooooo.',
+    'omhhlohhlohhlohhlohhlohhlohhlohhlodo',
+    'omllmollmollmollmollmollmollmollmodo',
+    'omoooooooooooooooooooooooooooooooodo',
+    'omhhhhlohhlohhlohhlohhlohhlohhhhlodo',
+    'omllllmollmollmollmollmollmollllmodo',
+    'omoooooooooooooooooooooooooooooooodo',
+    'omhhhhhlohhlohhlohhlohhlohhlohhhlodo',
+    'omlllllmollmollmollmollmollmolllmodo',
+    'omoooooooooooooooooooooooooooooooodo',
+    'omhhlohhlohhhhhhhhhhhhhhlohhlohhlodo',
+    'omllmollmollllllllllllllmollmollmodo',
+    '.oooooooooooooooooooooooooooooooooo.',
+    '..kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..',
+  ],
+  // hunter2, as the eye reads it: three asterisks to the left, four to the right.
+  decorate({ nx, ny, lit }) {
+    const y = ny + 1;
+    for (const x of [nx - 3, nx + 1, nx + 5, nx + 28, nx + 32, nx + 36, nx + 40]) {
+      for (const [dx, dy] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]) lit(x + dx, y + dy, COLOR.cyan, 0.65);
+    }
+  },
+};
+
+/** Buffer Overflow: a mug rated for 16 bytes, buried under a heap of As spilling over the rim. */
+const OVERFLOW: SpriteDef = {
+  rows: [
+    '....................................',
+    '...............h...a...l...m........',
+    '..............h.h.a.a.l.l.m.m.......',
+    '..............hhh.aaa.lll.mmm.......',
+    '.....l........h.h.a.a.l.l.m.m.......',
+    '....l.l.......h.h.a.a.l.l.m.m.......',
+    '....lll......l...h...l...h..........',
+    '....l.l.....l.l.h.h.l.l.h.h.ooo.....',
+    '....l.looo..lll.hhh.lll.hhhoohoo....',
+    '......oohoo.l.l.h.h.l.l.h.hohoho....',
+    '......ohoho.l.l.h.h.l.l.h.hohhho....',
+    '......ohhhohhhhhhhhhhhhhhhmohoho....',
+    '......ohohoooooooooooooooooohoho....',
+    '...l..ohohohhlllllllllllmdoooooo....',
+    '..l.l.ooooohhlllllllllllmdollllo....',
+    '..lll.....ohhllllnllnnnlmdoooolo....',
+    '..l.l.....ohhlllnnllnlllmdo..olo....',
+    '..l.l.....ohhllllnllnnnlmdo..olo....',
+    '...m...l..ohhllllnllnlnlmdoooomo....',
+    '..m.m.l.l.ohhlllnnnlnnnlmdommmmo....',
+    '..mmm.lll.ohhlllllllllllmdooooo.....',
+    '..m.m.l.l.ollmmmmmmmmmmmmmo.........',
+    '..m.m.l.l.ooooooooooooooooo.........',
+    '.kkkkkkkkkkkkkkkkkkkkkkkkkkk........',
+  ],
+  // The bytes that no longer fit, tumbling off the right side of the rim.
+  decorate({ nx, ny, pal, glyphs }) {
+    glyphs('A', nx + 34, ny + 5, pal.l, 0.7);
+    glyphs('A', nx + 37, ny + 13, pal.l, 0.45);
+    glyphs('A', nx + 40, ny + 20, pal.l, 0.25);
+  },
+};
+
+/** Logic Bomb: a round cartoon bomb, fuse lit, its body-mounted countdown down to 0:01. */
+const BOMB: SpriteDef = {
+  rows: [
+    '..................oo...aAAa.......',
+    '.................oGGo.a....a......',
+    '................oGGGGo......A.....',
+    '.........oooooooGGGGGGoo.....a.f..',
+    '.......oolllllllooGGGGggo.....faf.',
+    '.....oolllllllllllooGggggo...fawwf',
+    '....olllhlllllllllllogggo.....faa.',
+    '...olllhhhlllllllllllogo.......f..',
+    '...ollhhhlllllllllllloo...........',
+    '..ollhhlllllllllllllllo...........',
+    '..olhhhlllllllllllllllo...........',
+    '.ollhhlllllllllllllllllo..........',
+    '.olllGGGGGGGGGGGGGGGllmo..........',
+    '.olllnnnnnnnnnnnnnnnmmmo..........',
+    '.olllnrrrnnnrrrnnrnnmmmo..........',
+    '.olllnrnrnrnrnrnrrnnmmmo..........',
+    '.olllnrnrnnnrnrnnrnnmmmo..........',
+    '.olllnrnrnrnrnrnnrnnmddo..........',
+    '..ollnrrrnnnrrrnrrrnddo...........',
+    '..ollnnnnnnnnnnnnnnnddo...........',
+    '...olgggggggggggggggdo............',
+    '...ollllllmmmmmmdddddo............',
+    '....ollllmmmmmmdddddo.............',
+    '.....oolmmmmmmddddoo..............',
+    '.......oommmmdddoo................',
+    '.........ooooooo..................',
+    '.......kkkkkkkkkkk................',
+  ],
+  // Embers shaken loose from the spark, drifting away from the body.
+  decorate({ nx, ny, rnd, lit }) {
+    for (let i = 0; i < 8; i++) {
+      const a = (-80 + rnd() * 140) * Math.PI / 180, d = 4 + rnd() * 6;
+      lit(nx + 31 + Math.round(Math.cos(a) * d), ny + 5 + Math.round(Math.sin(a) * d), i % 3 ? COLOR.amber : COLOR.orange, 0.3 + rnd() * 0.5);
+    }
+  },
+};
+
+/** Social Engineering: an old telephone handset on a coiled cord, its voice rolling out in waves. */
+const PHONE: SpriteDef = {
+  rows: [
+    '.........oooooooooo...................',
+    '........ohhhllllmGGo..................',
+    '........ohhlllllmGGo..................',
+    '........ohlllllmmnGo..................',
+    '.......ohhlllllmGGo...................',
+    '.......ohhlllllmGGo...................',
+    '.......ohlllllmmnno...................',
+    '.......ohlllllmGGo....................',
+    '.......ohlllllmGGo....................',
+    '........ohmmllmnno....................',
+    '.ooo....ohmddmGGo.....................',
+    'ohlmo...ohhdooGGo.....................',
+    'ohlmo....ohmdooo......................',
+    'ooooo....ohldo...............ooo......',
+    'ohlmo....ohllo............oooGGGo.....',
+    'ohlmo.....olllo........ooonGGnGGo.....',
+    'ooooo.....ohlllo.....oonGGnGGllmo.....',
+    'ohlmo......ollllo...oGGnGGlllllmdo....',
+    'ohlmo.......ollllo..oGGllllllllmdo....',
+    'ooooo.......ohlllloooolllllllllmdo....',
+    'ohlmo........oomllllllllllllllmmdo....',
+    'ohlmo..........odmmmmmmllllllmmddo....',
+    'ooooo...........ooddmmmlllmmmmddo.....',
+    'ohlmoooooooooooooooooddmmmmmddddo.....',
+    '.ohhohhohhohhohhohhohhoodddddooo......',
+    '.ommommommommommommommooooooo.........',
+    '.oooooooooooooooooooooo...............'
+  ],
+  // Arcs roll out from the crook of the handset, fading with distance.
+  decorate({ nx, ny, lit }) {
+    const cx = nx + 20, cy = ny + 9;
+    for (const [r, a] of [[5, 0.95], [9, 0.6], [13, 0.3]]) {
+      for (let t = -1.2; t <= 0.05; t += 0.04) {
+        lit(Math.round(cx + r * Math.cos(t)), Math.round(cy + r * Math.sin(t)), COLOR.cyan, a);
+      }
+    }
+  },
+};
+
+/** Ransomware: a taped-up ransom note, its demand PAY BTC spelled in mismatched cut-out letter blocks. */
+const RANSOM: SpriteDef = {
+  rows: [
+    '...............gggggggg...............',
+    '...............gGGGGGGg...............',
+    '..ooooooooooooogGGGGGGgooooooooooooo..',
+    '..ohhhhhhhhhhhhgggggggghhhhhhhhhhhho..',
+    '..ohllllllllllllllllllllllllllllllmok.',
+    '..ohllnnnnnnnllddddddlllllllllllllmok.',
+    '..ohlnhhhhnnnoldddhdddollgggggggllmok.',
+    '..ohlnhhnhhnnolddhdhddollgwgggwggomok.',
+    '..ohlnhhnhhnnolddhdhddollgwgggwggomok.',
+    '..ohlnhhhhnnnoldhdddhdollggwgwgggomok.',
+    '..ohlnhhnnnnnoldhhhhhdollggwgwgggomok.',
+    '..ohlnhhnnnnnoldhdddhdollgggwggggomok.',
+    '..ohlnhhnnnnnoldhdddhdollgggwggggomok.',
+    '..ohlnnnnnnnnoldddddddollgggwggggomok.',
+    '..ohlloooooooollooooooollggggggggomok.',
+    '..ohllooooooollwwwwwwwwllloooooooomok.',
+    '..ohlloaaaaooolwnnnnnnwollnnnnnnnlmok.',
+    '..ohlloaoooaoolwnnnnnnwollnnllllnomok.',
+    '..ohlloaoooaoolwwwnnwwwollnllnnnnomok.',
+    '..ohlloaaaaooolwwwnnwwwollnllnnnnomok.',
+    '..ohlloaoooaoolwwwnnwwwollnllnnnnomok.',
+    '..ohlloaoooaoolwwwnnwwwollnllnnnnomok.',
+    '..ohlloaaaaooolwwwnnwwwollnllnnnnomok.',
+    '..ohlllooooooolwwwwwwwwollnnllllnomok.',
+    '..ohmooooooooommooooooooomnnnnnnnomok.',
+    '..ooo..oooo.oooo...ooooo.oooooooooook.',
+    '....k..kkkk.kkkk...kkkkk.kkkk..kk.kkk.',
+  ],
+  decorate({ gw, gh, rnd, lit }) {
+    for (let i = 0; i < 12; i++) {
+      lit(Math.floor(rnd() * gw), Math.floor(rnd() * gh), COLOR.amber, 0.2 + rnd() * 0.3);
+    }
+  },
+};
+
+/** Man-in-the-Middle: a hooded figure in shades, smirking, holding the two cut ends of a wire apart with a spark between them. */
+const MITM: SpriteDef = {
+  rows: [
+    '..............ooooooooooo..............',
+    '............oohhhlllmmmmmoo............',
+    '...........ohhllllllmmmmmmmo...........',
+    '..........ohhlllllllmmmmmmmmo..........',
+    '..........ohlllnnnnnnnnnmmmmo..........',
+    '.........ohllnnnnnnnnnnnnnmmmo.........',
+    '.........ohlnnnnnnnnnnnnnnnmmo.........',
+    '.........ohlnGGGGGGgGGGGGGnmmo.........',
+    '.........ohlnGwgggGnGgggwGnmmo.........',
+    '.........ohlnnGGGGnnnGGGGnnmmo.........',
+    '.........ohlnnnnnnnnnnnwnnnmmo.........',
+    '.........ohllnnnwwwwwwwnnnmmmo.........',
+    '..........ohllnnnnnnnnnnnmmmo..........',
+    '.....ooooooolhlnnnnnwnnnmmmooooooo.....',
+    '....ohhlloooooonnnnannnnoooooommmmo....',
+    'cccccccccohhhhoaanawnnaaohhhhoccccccccc',
+    'cccccccccohllmoaannawnaaohllmoccccccccc',
+    '....omlllohmhmonnnannnnnohmhmommmdo....',
+    '....omllloooooonnnnwnnnnoooooommmdo....',
+    '......omllllmddnnnnnnnnnoodmmmmdo......',
+    '......omllllmddnnnnnnnnnoodmmmmdo......',
+    '......omllllmdddnnnnnnnooodmmmmdo......',
+    '......ooooooooooooooooooooooooooo......',
+    '......kkkkkkkkkkkkkkkkkkkkkkkkkkk......',
+  ],
+  // The wire carries on to both edges of the art; Alice and Bob wait at either end.
+  decorate({ gw, sw, nx, ny, glyphs, lit }) {
+    for (let gx = 0; gx < nx; gx++) for (const dy of [15, 16]) { lit(gx, ny + dy, COLOR.cyan, 1); lit(nx + sw + gx, ny + dy, COLOR.cyan, 1); }
+    glyphs('A', 1, ny + 8, COLOR.cyan, 0.8);
+    glyphs('B', gw - 4, ny + 8, COLOR.cyan, 0.8);
+  },
+};
+
+/** 2FA: a battered old smartphone buzzing with a six-digit code (123 456, naturally) on its cracked screen. */
+const TWOFA: SpriteDef = {
+  rows: [
+    '...ooooooooooooooo...',
+    '..ohhhhhhllllllmmdo..',
+    '.ohlllllnnnnnlllllmo.',
+    '.ohlllllllllllllllmo.',
+    '.ohoooooooooooowGomo.',
+    '.ohoGGGooooooowooomod',
+    '.ohooooooooowwoooomod',
+    '.ohoocooocccoocccomod',
+    '.ohoccooooocoooocomo.',
+    '.ohoocooocccoooccomo.',
+    '.ohoocooocoooooocomo.',
+    '.ohocccoocccoocccomo.',
+    '.ohooooooooooooooomo.',
+    '.ohooooooooooooooomo.',
+    '.ohococoocccoocccomo.',
+    '.ohococoocoooocooomo.',
+    '.ohocccoocccoocccomo.',
+    '.ohooocoooocoococomo.',
+    '.ohooocoocccoocccomo.',
+    '.ohooooooooooooooomo.',
+    '.ohorrrrrRRRRRRRRomo.',
+    '.ohooooooooooooooomo.',
+    '.ohlllllllllllllllmo.',
+    '.ohllllldddddlllllmo.',
+    '..odmmmmmmmmmmmmddo..',
+    '...ooooooooooooooo...',
+    '....kkkkkkkkkkkkk....',
+  ],
+  // Buzz arcs either side of the phone: the code has arrived, for someone.
+  decorate({ sw, sh, nx, ny, lit }) {
+    const midY = ny + Math.floor(sh / 2);
+    for (const [off, half, a] of [[3, 3, 0.85], [6, 4, 0.4]]) {
+      for (let y = -half; y <= half; y++) {
+        const bend = Math.abs(y) === half ? 1 : 0;
+        lit(nx - off + bend, midY + y, COLOR.cyan, a);
+        lit(nx + sw - 1 + off - bend, midY + y, COLOR.cyan, a);
+      }
+    }
+  },
+};
+
+/** CAPTCHA: a 3x3 verification grid demanding every square with REGRET; each tile holds a small frown, three are ticked, and the cursor is hovering over one more. */
+const CAPTCHA: SpriteDef = {
+  rows: [
+    'ooooooooooooooooooooooooooooooooo.',
+    'ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhho.',
+    'ohdddwwddwwwddwwdwwddwwwdwwwdddmo.',
+    'ohdddwdwdwdddwdddwdwdwddddwddddmo.',
+    'ohdddwwddwwddwdwdwwddwwdddwddddmo.',
+    'ohdddwdwdwdddwdwdwdwdwddddwddddmo.',
+    'ohdddwdwdwwwddwwdwdwdwwwddwddddmo.',
+    'ohnnnnnnnnnnnnnnnnnnnnnnnnnnnnnmo.',
+    'ohllllllwwlnmmmmmmmmmnmmmmmmmmmmo.',
+    'ohlllllwwllnmnnmmmnnmnmnnmmmnnmmo.',
+    'ohlwwlwwlllnmmmmmmmmmnmmmmmmmmmmo.',
+    'ohllwwwllllnmmmnnnmmmnmmmnnnmmmmo.',
+    'ohlllwlllllnmmnmmmnmmnmmnmmmnmmmo.',
+    'ohnnnnnnnnnnnnnnnnnnnnnnnnnnnnnmo.',
+    'ohmmmmmmmmmnllllllwwlnmmmmmmmmmmo.',
+    'ohmnnmmmnnmnlllllwwllnmnnmnmnnmmo.',
+    'ohmmmmmmmmmnlwwlwwlllnmmmmnnmmmmo.',
+    'ohmmmnnnmmmnllwwwllllnmmmnnwnmmmo.',
+    'ohmmnmmmnmmnlllwlllllnmmnmnwwnmmo.',
+    'ohnnnnnnnnnnnnnnnnnnnnnnnnnwwwnmo.',
+    'ohllllllwwlnmmmmmmmmmnmmmmnwwwwno.',
+    'ohlllllwwllnmnnmmmnnmnmnnmnwwwwwn.',
+    'ohlwwlwwlllnmmmmmmmmmnmmmmnwwwnnn.',
+    'ohllwwwllllnmmmnnnmmmnmmmnnnwwnmo.',
+    'ohlllwlllllnmmnmmmnmmnmmnmmmnwwno.',
+    'ooooooooooooooooooooooooooooonnoo.',
+    '.kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk',
+  ],
+};
+
+/** VPN: a wireframe globe with a glowing tunnel bored straight through it, plus a tiny flag claiming you were always here. */
+const VPN: SpriteDef = {
+  rows: [
+    '..........................Grrrrrr......',
+    '..........................Gwwwwww......',
+    '..........................Gllllll......',
+    '...............ooooooooo..G............',
+    '.............oohhllhllhhooG............',
+    '............oohhhhhhhhhhhoo............',
+    '...........ohlhmmmmhmmmmhmlo...........',
+    '..........ohlhhmmmmhmmmmllmlo..........',
+    '.........oolmhmmmmmhmmmmmlmmoo.........',
+    '.........ohhhhhhmmmhmmmllllllo.........',
+    'ooo.....ohlmmhmhhhhhhlllmldddlo.....ooo',
+    'ohhooooooooooooooooooooooooooooooooohho',
+    'ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhho',
+    'ollllllllcccccccccccccccccccccllllllllo',
+    'cllccwwwcccwwwcccwwwcccwwwcccwwwcccwllc',
+    'ollllllllcccccccccccccccccccccllllllllo',
+    'ommmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmo',
+    'ommooooooooooooooooooooooooooooooooommo',
+    'ooo.....ohmmmlmmmmdldddddldddlo.....ooo',
+    '.........ohmmlmmmddldddddlddlo.........',
+    '.........oolllmmdddldddddllloo.........',
+    '..........olmllllllllllllldlo..........',
+    '...........olmlddddlddddldlo...........',
+    '............oolldddldddlloo............',
+    '.............oollllllllloo.............',
+    '...............ooooooooo...............',
+    '..........kkkkkkkkkkkkkkkkkkk..........',
+  ],
+  // Packets go in one end and leave the other, somewhere else entirely.
+  decorate({ gw, sw, nx, ny, lit }) {
+    const y = ny + 14;
+    for (let i = 1; i <= 10; i += 2) {
+      const a = Math.max(0.15, 0.8 - i * 0.07);
+      if (nx - i >= 0) lit(nx - i, y, COLOR.cyan, a);
+      if (nx + sw - 1 + i < gw) lit(nx + sw - 1 + i, y, COLOR.cyan, a);
+    }
+  },
+};
+
+/** Watchdog: an alert guard dog sitting upright, ears up, in a spiked collar. */
+const WATCHDOG: SpriteDef = {
+  rows: [
+    '...............o.....o............',
+    '..............oho...omo...........',
+    '..............ohlo..odmo..........',
+    '.............ohdlo.odmo...........',
+    '.............ohddloodmo...........',
+    '.............ohddlhlmo............',
+    '............ohllhhhllmooooo.......',
+    '............ohlhaahhlllhhhloo.....',
+    '............ohlhanllllhhhhhloGGo..',
+    '............omllhlllllllllllGwGGo.',
+    '............omlllllllllllllllGGo..',
+    '............ommllloooooooooooooo..',
+    '.............odmlmowllllwlmmmo....',
+    '.............odmlmoooooooooo......',
+    '...........GGGGGGGGGGGGGGGG.......',
+    '..........wwGggggggggggggGww......',
+    '...........GGGwwwGwwwGwwwGG.......',
+    '.............omwlllwlllwlhmo......',
+    '............omlhhhhhhhllhhmo......',
+    '...........omlhhhhhhhhllhhmo......',
+    '.oo.......omlhhhhhhhhhllhhmo......',
+    'ohmo.....omlhhhddddhllmomlmo......',
+    'omlmooooomlhhdllllldmo.omlmo......',
+    '.omlmlllmmlhdlllllldmo..omlmo.....',
+    '...ommmmmmlldlhhhhho...ohhhhmo....',
+    '....ooooooooooooooooooooooooo.....',
+    '.........kkkkkkkkkkkkkkkkkkkkkkk..',
+  ],
+  // The exclamation mark of a dog who has heard something.
+  decorate({ nx, ny, sw, glyphs }) {
+    glyphs('!', nx + sw - 7, ny + 1, COLOR.amber, 0.9);
+  },
+};
+
+/** Air Gap: scissors snipping a network cable in two, with bare wires and sparks jumping across the gap between its plugs. */
+const AIRGAP: SpriteDef = {
+  rows: [
+    '..........oooooo........oooooo..........',
+    '.........ohhhhllo......ohhhhllo.........',
+    '........ohhhhllllo....ohhhhllllo........',
+    '.......ohhhoooollmo..ohhhoooollmo.......',
+    '.......ohho....ommo..ohho....ommo.......',
+    '.......ohho....ommo..ohho....ommo.......',
+    '.......ohlloooommmo..ohlloooommmo.......',
+    '........ollllmmmmo....ollllmmmmo........',
+    '.........ollmmmmohoooomollmmmmo.........',
+    '..........oooooollhomllhoooooo..........',
+    '...............oomlGGlhoo...............',
+    '................oomgghoo................',
+    '................ohoooomo................',
+    '...............ohholllmmo...............',
+    '...............ohllollmmo...............',
+    '..............ohhlloollmmo..............',
+    '...oo........ohhllo..ollmmo........oo...',
+    '.oohhoo......ohllo....olmmo......oolloo.',
+    'ohhhhhloooooohhllo....ollmmoooooohhhhhlo',
+    'oalllllmohhhohlee.a..f.rrlmohhhomhllllao',
+    'oAllllldollohlla...ww...clmmollodhllllAo',
+    'oallllldommohlorr..ww..eeolmommodhllllao',
+    'oAmmmmmdodohlooc..f..a..aoolmododlmmmmAo',
+    'ommmmmdooooloo............ooloooommmmmdo',
+    '.ooooookkkko................okkkkoooooo.',
+    '..kkkkkkkkkk................kkkkkkkkkk..',
+  ],
+  decorate({ nx, ny, rnd, lit }) {
+    for (let i = 0; i < 6; i++) lit(nx + 15 + Math.floor(rnd() * 10), ny + 15 + Math.floor(rnd() * 3), COLOR.amber, 0.2 + rnd() * 0.3);
+  },
+};
+
+/** Tripwire: a thin glowing wire strung low between two posts, tied by a pull line to a ringing alarm bell. */
+const TRIPWIRE: SpriteDef = {
+  rows: [
+    '.................oooooooooooooooooooo.',
+    '.................ohhhhhhhhhhhhhhhhlmo.',
+    '.................oooooooooooooooohlmo.',
+    '.................oGGGo..........ohlmo.',
+    '................ooooooo.........ohlmo.',
+    '..............oolhlllmdoo.......ohlmo.',
+    '.............ollhhllllmddo......ohlmo.',
+    '.............olhhlllllmmdo......ohlmo.',
+    '.............olhllllllmmdo......ohlmo.',
+    '.............olhllllllmmdo......ohlmo.',
+    '.............olhllllllmmdo......ohlmo.',
+    '............ollhlllllllmddo.....ohlmo.',
+    '...........ollhllllllllmmddo....ohlmo.',
+    '.........oolhhlllllllllmmmddoo..ohlmo.',
+    '.........oGGGGGGGGGGGGGGGGgggo..ohlmo.',
+    '.........ooooooooooooooooooooo..ohlmo.',
+    '.................oaaao..........ohlmo.',
+    '..ooooo..........oaaao..........ohlmo.',
+    '..ohlmo...........ooo...........ohlmo.',
+    '..ohlmo............c............ohlmo.',
+    '..ohlmGccccccccccccwccccccccccccGhlmo.',
+    '..ohlmo.........................ohlmo.',
+    '..ohlmo.........................ohlmo.',
+    '.ogGGGgo.......................ogGGGgo',
+    '.ooooooo.......................ooooooo',
+    'kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk',
+  ],
+  // Ring arcs on both sides of the bell, one flat alarm, and the wire still humming.
+  decorate({ nx, ny, rnd, lit, glyphs }) {
+    const arcs = [[10, 5], [9, 6], [8, 7], [8, 8], [8, 9], [9, 10], [10, 11],
+      [27, 5], [28, 6], [29, 7], [29, 8], [29, 9], [28, 10], [27, 11]];
+    arcs.forEach(([x, y]) => lit(nx + x, ny + y, COLOR.amber, 0.9));
+    glyphs('!', nx + 3, ny + 5, COLOR.amber, 0.85);
+    for (let i = 0; i < 7; i++) {
+      lit(nx + 9 + Math.floor(rnd() * 21), ny + (i % 2 ? 19 : 21), COLOR.cyan, 0.2 + rnd() * 0.3);
+    }
+  },
+};
+
+/** Sandbox: a kids' sandbox with bucket and spade, and a tiny mushroom cloud going off harmlessly in the middle. */
+const SANDBOX: SpriteDef = {
+  rows: [
+    '...................GGGGG................',
+    '.................GGwwwGGGG..............',
+    '................GGwwfffaGGG.............',
+    '...............GGwfaaaaaffGG............',
+    '...............GGffaaaaaafGG..ooo.......',
+    '................GfffaaaffGG..oGwgo......',
+    '.........lllll...ggfffffgg..oGwwGgo.....',
+    '........l.....l.....aaa.....oGwwGgo.....',
+    '.......l.......l....aaa.....oGwGGgo.....',
+    '.......l.......l....aaa.....oGGGggo.....',
+    '......ooooooooooo...aaa......ooGoo......',
+    '...oooohhhhlllmdooooaaaooooooooAooooo...',
+    '...ohhoohhhlllmoohhhfafhhhhhhhoaohhho...',
+    '..oooooohhhlllmoooofafafoooooooaoooooo..',
+    '..ohlomohhhlllmomlGGfafGGlmmdmoaomolmo..',
+    '..ohlomohhhlllmomGgGgGgGgGmmlmoaodolmo..',
+    '..ohlommohhllmommmmlmmmmmmlmdmoaommolmo.',
+    '.ohlommmohhllmommmdmmmlmmmmmmloAommolmo.',
+    '.ohlommmooooooommllmmmmmmmmlmlhllmdolmo.',
+    '.ohlommmmmmmmlmmmmmmmdmmdmlllmmmmllolmo.',
+    'oooooooooooooooooooooooooooooooooooooooo',
+    'ohhhhhhhhhhhhhhhhhhhlllllllllllllllllllo',
+    'oooooooooooooooooooooooooooooooooooooooo',
+    'ommGmmmmmmmmommmmmmmmmmmmmommmmmmmmmGmmo',
+    'oddGddddddddodddddddddddddodddddddddGddo',
+    'oooooooooooooooooooooooooooooooooooooooo',
+    '..kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..',
+  ],
+  // A few embers drifting off the blast, none of them going anywhere.
+  decorate({ nx, ny, rnd, lit }) {
+    for (let i = 0; i < 8; i++) {
+      const a = (-160 + rnd() * 140) * Math.PI / 180, d = 9 + rnd() * 4;
+      lit(nx + 21 + Math.round(Math.cos(a) * d), ny + 3 + Math.round(Math.sin(a) * d * 0.5), i % 3 ? COLOR.amber : COLOR.orange, 0.3 + rnd() * 0.4);
+    }
+  },
+};
+
+/** Exit Scam: a patterned rug yanked sideways out from under a stack of amber coins, which ripple, topple and fly. */
+const RUG: SpriteDef = {
+  rows: [
+    '..............ooo.......................',
+    '..ooo........oaaAo........ooooo.........',
+    '.oaaAo......oawAAAo......oaawAAo........',
+    'oawAAAo.....oaAaAAo......oaAAAAo........',
+    'oaAaAAo.....oaAAAAo.......ooooo.........',
+    'oaAAAAo......oAAAo......................',
+    '.oAAAo........ooo.......................',
+    '..ooo...................................',
+    '.....oaaaaao............................',
+    '....oaAAAAAAo.......oooooo..............',
+    '.....ooooooo........hhhhhl..............',
+    '........oaaaaao....ohdddllo....ooooooo..',
+    '.......oaAAAAAAo...hdddlhdl...ohhhllmooo',
+    '........oooooooao.ohddddhllo.oohhlllmwGG',
+    '.........oaAAAAAAohlddlllldlohhhooooowGG',
+    '..........oooooooohhdloolddlohhllllmmwGG',
+    '..........oaAAAAAAohlo..omdloooooooomwgg',
+    '...........ooooooodll....mdllohhlllmmwgg',
+    '...oooooooooooohhddlo....omldooooooomwgg',
+    'mllhhhhhhhhhhhhdlddl......mlddohlllmmooo',
+    '...ddldddddlddddhdlo......omdddooooooo..',
+    'mlldlhldddlhldddhdl........mdddddl......',
+    '...ddldddddlddddllo........omlllll......',
+    'mlllllllllllllllll..........mloooo......',
+    '...ooooooooooookkkkkkkkkkkkkkk..........',
+    '..kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk........',
+  ],
+  // Coin glints thrown off the pile.
+  decorate({ nx, ny, rnd, lit }) {
+    for (let i = 0; i < 5; i++) lit(nx + 2 + Math.floor(rnd() * 28), ny + Math.floor(rnd() * 8), COLOR.amber, 0.25 + rnd() * 0.4);
+  },
+};
+
 type SpriteDrawer = (ctx: CanvasRenderingContext2D, rnd: () => number, ax: number, ay: number, aw: number, ah: number, col: string) => void;
 
 const draw = (def: SpriteDef): SpriteDrawer => (ctx, rnd, ax, ay, aw, ah, col) => drawSprite(ctx, rnd, ax, ay, aw, ah, col, def);
@@ -1220,4 +2379,34 @@ export const PIXEL_SPRITES: Record<PixelSprite, SpriteDrawer> = {
   padlock: draw(PADLOCK),
   cpu: draw(CPU),
   bug: draw(BUG),
+  hello: draw(HELLO),
+  balancer: draw(BALANCER),
+  stash: draw(STASH),
+  intern: draw(INTERN),
+  duck: draw(DUCK),
+  bounty: draw(BOUNTY),
+  cron: draw(CRON),
+  backup: draw(BACKUP),
+  raid: draw(RAID),
+  rug: draw(RUG),
+  container: draw(CONTAINER),
+  cloud: draw(CLOUD),
+  sandwich: draw(SUDO),
+  baton: draw(ORCHESTRATOR),
+  crowbar: draw(CROWBAR),
+  worm: draw(WORM),
+  syringe: draw(SQLI),
+  keyboard: draw(KEYLOGGER),
+  overflow: draw(OVERFLOW),
+  bomb: draw(BOMB),
+  phone: draw(PHONE),
+  ransom: draw(RANSOM),
+  mitm: draw(MITM),
+  twofa: draw(TWOFA),
+  captcha: draw(CAPTCHA),
+  vpn: draw(VPN),
+  watchdog: draw(WATCHDOG),
+  scissors: draw(AIRGAP),
+  tripwire: draw(TRIPWIRE),
+  sandbox: draw(SANDBOX),
 };

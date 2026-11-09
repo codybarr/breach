@@ -22,9 +22,9 @@ function cardCount(g: Game) {
 }
 
 describe('engine', () => {
-  it('has 30 card types', () => {
-    expect(ALL_CARDS.length).toBe(30);
-    expect(KINGDOM_POOL.length).toBe(23);
+  it('has 60 card types', () => {
+    expect(ALL_CARDS.length).toBe(60);
+    expect(KINGDOM_POOL.length).toBe(53);
   });
 
   it('AI vs AI games always terminate legally and conserve cards', () => {

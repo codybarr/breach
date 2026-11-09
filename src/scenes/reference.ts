@@ -16,7 +16,7 @@ RESOURCES
 
 KEYWORDS
   EXPLOIT  attacks the opponent. BREACH deals INT damage.
-  DAEMON   while in your hand, auto-blocks enemy exploits.
+  DAEMON   while in your hand, auto-reacts to enemy exploits.
   SHIELD   absorbs breach until your next turn.
   TRASH    removes a card from the game for good.
 
@@ -39,7 +39,7 @@ RESOURCES
                   supply depletion, then highest INT.
 
 EFFECTS
-  EXPLOIT  an attack; a Daemon in hand blocks it.
+  EXPLOIT  an attack; a Daemon in hand can stop or soften it.
   BREACH   damage to INT, reduced by available shield.
   SHIELD   absorbs damage; resets at your next turn.
   HEAL     restores INT, up to the starting maximum.

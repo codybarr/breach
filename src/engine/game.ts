@@ -21,9 +21,11 @@ export interface PlayerState {
   cycles: number;
   credits: number;
   bandwidth: number;
+  noBuy: boolean; // set by Air Gap until the player's next turn
 }
 
-export type Purpose = 'trash' | 'trashUpgrade' | 'discard' | 'play';
+/** Tells the AI how to answer a hand prompt; the UI treats them all alike. */
+export type Purpose = 'trash' | 'trashUpgrade' | 'discard' | 'play' | 'topdeck' | 'cycle' | 'ransom';
 
 export interface HandPrompt {
   kind: 'hand';
@@ -41,6 +43,8 @@ export interface SupplyPrompt {
   maxCost: number;
   title: string;
   filter?: (d: CardDef) => boolean;
+  /** Piles stand in for card types, so an empty pile can still be picked (Backup). */
+  anyStock?: boolean;
 }
 
 export type Prompt = HandPrompt | SupplyPrompt;
@@ -86,6 +90,8 @@ export class Game {
   pending: Prompt | null = null;
   logLines: string[] = [];
   events: GameEvent[] = [];
+  /** Effects that fire at the start of each player's next turn. */
+  scheduled: [Array<() => void>, Array<() => void>] = [[], []];
 
   private runner: Effect | null = null;
   private nextId = 1;
@@ -96,7 +102,7 @@ export class Game {
     const ai = opts.aiFlags ?? [false, true];
     this.players = [0, 1].map((i) => ({
       name: names[i], isAI: ai[i], deck: [], hand: [], discard: [], inPlay: [],
-      integrity: MAX_INTEGRITY, shield: 0, cycles: 0, credits: 0, bandwidth: 0,
+      integrity: MAX_INTEGRITY, shield: 0, cycles: 0, credits: 0, bandwidth: 0, noBuy: false,
     })) as unknown as [PlayerState, PlayerState];
 
     this.kingdom = opts.kingdom ?? this.pickKingdom();
@@ -181,13 +187,13 @@ export class Game {
   canBuy(p: number, pile: string): boolean {
     if (this.over || this.pending || this.current !== p || this.def(pile)?.kind === 'malware') return false;
     const s = this.players[p];
-    return s.bandwidth > 0 && (this.supply[pile] ?? 0) > 0 && s.credits >= this.def(pile).cost;
+    return !s.noBuy && s.bandwidth > 0 && (this.supply[pile] ?? 0) > 0 && s.credits >= this.def(pile).cost;
   }
 
   /** Is a supply pile a legal answer to the current supply prompt? */
   supplyEligible(pr: SupplyPrompt, pile: string): boolean {
     const d = this.def(pile);
-    return (this.supply[pile] ?? 0) > 0 && d.cost <= pr.maxCost && (!pr.filter || pr.filter(d));
+    return (pr.anyStock || (this.supply[pile] ?? 0) > 0) && d.cost <= pr.maxCost && (!pr.filter || pr.filter(d));
   }
 
   handEligible(pr: HandPrompt, card: Card): boolean {
@@ -334,17 +340,24 @@ export class Game {
     const s = this.players[p];
     let drawn = 0;
     for (let i = 0; i < n; i++) {
-      if (s.deck.length === 0) {
-        if (s.discard.length === 0) break;
-        s.deck = s.discard;
-        s.discard = [];
-        this.rng.shuffle(s.deck);
-        this.emit({ t: 'shuffle', p });
-      }
+      if (!this.topCard(p)) break;
       s.hand.push(s.deck.pop()!);
       drawn++;
     }
     if (!quiet && drawn) this.log(`  ${s.name} draws ${drawn}.`);
+  }
+
+  /** The top card of a deck, reshuffling the discard pile first if the deck is empty. */
+  topCard(p: number): Card | null {
+    const s = this.players[p];
+    if (s.deck.length === 0) {
+      if (s.discard.length === 0) return null;
+      s.deck = s.discard;
+      s.discard = [];
+      this.rng.shuffle(s.deck);
+      this.emit({ t: 'shuffle', p });
+    }
+    return s.deck[s.deck.length - 1];
   }
 
   gainCard(p: number, pile: string, dest: 'hand' | 'discard'): Card | null {
@@ -362,10 +375,10 @@ export class Game {
     this.emit({ t: 'trash', p, card: c });
   }
 
-  breach(p: number, n: number) {
+  breach(p: number, n: number, ignoreShield = false) {
     if (n <= 0) return;
     const s = this.players[p];
-    const absorbed = Math.min(s.shield, n);
+    const absorbed = ignoreShield ? 0 : Math.min(s.shield, n);
     s.shield -= absorbed;
     const dmg = n - absorbed;
     s.integrity -= dmg;
@@ -397,9 +410,13 @@ export class Game {
     s.cycles = 1;
     s.bandwidth = 1;
     s.credits = 0;
+    s.noBuy = false;
     this.phase = 'action';
     this.emit({ t: 'turn', p });
     this.log(`── turn ${Math.ceil(this.turn / 2)} · ${s.name} ──`);
+    for (const fire of this.scheduled[p].splice(0)) {
+      if (!this.over) fire();
+    }
   }
 
   private finishByScore(reason: string) {
@@ -422,7 +439,17 @@ export class Game {
 
 /** The API card effects are written against. `p` is "me" from the effect's point of view. */
 export class Ctx {
-  constructor(public g: Game, public p: number, public self: Card | null) {}
+  /**
+   * @param source id of the card producing this effect, when there is no `self` instance (Container).
+   * @param softens subtracted from each Breach this context takes (VPN).
+   */
+  constructor(
+    public g: Game,
+    public p: number,
+    public self: Card | null,
+    private source: string | null = self?.def ?? null,
+    private softens = 0,
+  ) {}
 
   get me() { return this.g.players[this.p]; }
   get opp() { return this.g.players[1 - this.p]; }
@@ -433,7 +460,9 @@ export class Ctx {
   credits(n: number) { this.me.credits += n; }
   bandwidth(n: number) { this.me.bandwidth += n; }
   heal(n: number) { this.g.heal(this.p, n); }
-  breach(n: number) { this.g.breach(this.p, n); }
+  breach(n: number, ignoreShield = false) { this.g.breach(this.p, Math.max(0, n - this.softens), ignoreShield); }
+  /** Run `fire` at the start of this player's next turn. */
+  atNextTurn(fire: () => void) { this.g.scheduled[this.p].push(fire); }
   shield(n: number) {
     this.me.shield += n;
     this.g.emit({ t: 'shield', p: this.p, amount: n });
@@ -465,6 +494,42 @@ export class Ctx {
     if (picked.length) this.g.log(`  ${this.me.name} discards ${picked.length}.`);
   }
 
+  /** Move cards from hand to the top of the deck. */
+  putOnDeck(indices: number[]) {
+    const hand = this.me.hand;
+    const picked = indices.map((i) => hand[i]);
+    for (const c of picked) {
+      hand.splice(hand.indexOf(c), 1);
+      this.me.deck.push(c);
+    }
+    if (picked.length) this.g.log(`  ${this.me.name} tops their deck with ${picked.length}.`);
+  }
+
+  /** Trash the top card of this player's deck and return it. */
+  trashTop(): Card | null {
+    if (!this.g.topCard(this.p)) return null;
+    const c = this.me.deck.pop()!;
+    this.g.trashCard(this.p, c);
+    this.g.log(`  ${this.me.name} loses ${this.def(c).name} from the top of their deck.`);
+    return c;
+  }
+
+  /** Move a card of type `pile` from the discard pile into hand. */
+  recover(pile: string) {
+    const i = this.me.discard.map((c) => c.def).lastIndexOf(pile);
+    if (i < 0) return;
+    const [c] = this.me.discard.splice(i, 1);
+    this.me.hand.push(c);
+    this.g.log(`  ${this.me.name} restores ${this.def(c).name} from backup.`);
+  }
+
+  /** Run a supply Program's effect without gaining a copy. */
+  *runFromSupply(pile: string): Effect {
+    this.g.log(`  ${this.me.name} spins up ${this.def(pile).name}.`);
+    const effect = this.def(pile).effect;
+    if (effect) yield* effect(new Ctx(this.g, this.p, null, pile));
+  }
+
   trashSelf() {
     const c = this.self;
     if (!c) return;
@@ -483,22 +548,34 @@ export class Ctx {
     return { kind: 'supply', player: this.p, ...o };
   }
 
+  /** The Daemon that answers an Exploit: a card that stays in hand before one that is spent, then the priciest. */
+  private blockerIn(hand: Card[]): Card | undefined {
+    const spent = (c: Card) => Number(!!this.def(c).reaction?.discards);
+    return hand
+      .filter((c) => this.def(c).reaction?.blocks)
+      .sort((a, b) => spent(a) - spent(b) || this.def(b).cost - this.def(a).cost)[0];
+  }
+
   /** Resolve an exploit against the opponent, honoring Daemons in their hand. */
-  *exploit(fn: (target: Ctx) => Effect): Effect {
+  *exploit(fn: (target: Ctx) => Effect, opts: { unblockable?: boolean } = {}): Effect {
     const tgt = 1 - this.p;
     const ts = this.g.players[tgt];
-    const name = this.self ? this.def(this.self).name : 'exploit';
-    const honeypot = ts.hand.find((c) => c.def === 'honeypot');
-    const firewall = ts.hand.find((c) => c.def === 'firewall');
-    const blocker = honeypot ?? firewall;
+    const name = this.source ? this.def(this.source).name : 'exploit';
+    const blocker = opts.unblockable ? undefined : this.blockerIn(ts.hand);
     if (blocker) {
-      const bn = this.def(blocker).name;
+      const daemon = this.def(blocker);
       this.g.emit({ t: 'block', p: tgt, by: blocker.def, exploit: name });
-      this.g.log(`  ${ts.name}'s ${bn} blocks ${name}.`);
-      if (honeypot) this.g.breach(this.p, 2);
+      this.g.log(`  ${ts.name}'s ${daemon.name} blocks ${name}.`);
+      const defender = new Ctx(this.g, tgt, null);
+      if (daemon.reaction?.discards) defender.discardFromHand([ts.hand.indexOf(blocker)]);
+      if (daemon.reaction?.onBlock) yield* daemon.reaction.onBlock(defender, this, this.source);
       return;
     }
-    yield* fn(new Ctx(this.g, tgt, null));
+    const reactions = ts.hand.map((c) => this.def(c).reaction);
+    const softens = Math.max(0, ...reactions.map((r) => r?.softens ?? 0));
+    const drawsAfter = Math.max(0, ...reactions.map((r) => r?.drawsAfterHit ?? 0));
+    yield* fn(new Ctx(this.g, tgt, null, null, softens));
+    if (drawsAfter) this.g.drawCards(tgt, drawsAfter);
   }
 
   *runTwice(handIndex: number): Effect {

@@ -8,6 +8,10 @@ const BASE_VALUE: Record<string, number> = {
   zeroday: 44, packetsniffer: 44, botnet: 40, backdoor: 42, encryption: 33, patch: 28,
   honeypot: 38, firewall: 22, garbagecollector: 30, defrag: 25, cryptominer: 30, compiler: 26,
   recursion: 30, antivirus: 0, phishing: 32, scriptkiddie: 27, fork: 30,
+  helloworld: 12, loadbalancer: 26, gitstash: 24, intern: 22, rubberduck: 34, bugbounty: 33, cronjob: 34, backup: 33,
+  raidarray: 38, exitscam: 34, container: 34, cloudcompute: 50, sudo: 66, orchestrator: 68,
+  bruteforce: 36, worm: 24, sqlinjection: 42, keylogger: 40, bufferoverflow: 42, logicbomb: 46, socialengineering: 44,
+  ransomware: 50, mitm: 44, twofactor: 24, captcha: 34, vpn: 34, watchdog: 32, airgap: 26, tripwire: 36, sandbox: 44,
 };
 
 /**
@@ -73,8 +77,30 @@ export class AI {
     const opp = g.players[1 - this.p];
     const me = g.players[this.p];
     const has = (f: (x: CardDef) => boolean) => hand.some((c) => c !== self && f(g.def(c)));
+    if (d.id === 'cloudcompute') return 99; // after other cycle-givers, so more Programs are in play
     if (d.givesCycles) return 100 + d.givesCycles * 3 + d.cost;
     switch (d.id) {
+      case 'sudo': return 86;
+      case 'logicbomb': return 79;
+      case 'ransomware': return 77;
+      case 'socialengineering': return 75;
+      case 'keylogger': return 74;
+      case 'bruteforce': return 71;
+      case 'sqlinjection': return 69;
+      case 'mitm': return 68;
+      case 'bufferoverflow': return 65;
+      case 'container': return 61;
+      case 'exitscam': return has((x) => x.kind === 'data') ? 66 : 50;
+      case 'worm': return 57;
+      case 'cronjob': return 57;
+      case 'sandbox': return 58;
+      case 'captcha': return 56;
+      case 'tripwire': return 55;
+      case 'intern': return 52;
+      case 'twofactor': return 45;
+      case 'bugbounty': return has((x) => x.kind === 'malware') ? 70 : 48;
+      case 'backup': return me.discard.some((x) => g.def(x).kind === 'program' || (g.def(x).credits ?? 0) >= 2) ? 62 : -1;
+      case 'airgap': return me.integrity <= 8 ? 90 : -1;
       case 'zeroday': return opp.integrity <= 8 ? 98 : 72;
       case 'recursion': return has((x) => x.kind === 'program') ? 92 : -1;
       case 'rootkit': return 84;
@@ -151,7 +177,8 @@ export class AI {
   }
 
   private answerSupply(g: Game, pr: SupplyPrompt): string | null {
-    return this.bestPile(g, (id) => g.supplyEligible(pr, id), 0);
+    // Recovering a Data card from discard would only clog the hand.
+    return this.bestPile(g, (id) => g.supplyEligible(pr, id) && !(pr.anyStock && g.def(id).kind === 'data'), 0);
   }
 
   // ───────────────────────── hand choices ─────────────────────────
@@ -201,6 +228,13 @@ export class AI {
       // Prefer junk, then the cheapest currency.
       const pick = byKeep[0];
       return [pick];
+    }
+    if (pr.purpose === 'topdeck') return byKeep.slice(-pr.min);
+    if (pr.purpose === 'cycle') return byKeep.filter((i) => this.keepValue(g.def(hand[i])) < 0).slice(0, pr.max);
+    if (pr.purpose === 'ransom') {
+      const pay = byKeep.slice(0, 2);
+      const cheap = pay.every((i) => this.keepValue(g.def(hand[i])) <= 3);
+      return cheap || g.players[pr.player].integrity <= 8 ? pay : [];
     }
     // discard
     return byKeep.slice(0, pr.min);

@@ -5,9 +5,25 @@ export type CardKind = 'currency' | 'data' | 'malware' | 'program';
 /** Procedural 3D dot-matrix models available as card art (drawn in render/dotModels). */
 export type DotModel = 'cpu' | 'honeypot';
 
+/** What a Daemon does from hand when an Exploit targets its owner. */
+export interface DaemonReaction {
+  /** Cancels the Exploit. */
+  blocks?: boolean;
+  /** The Daemon is discarded when it blocks. */
+  discards?: boolean;
+  onBlock?: (me: Ctx, attacker: Ctx, exploit: string | null) => import('./game').Effect;
+  /** Subtracted from each Breach the Exploit deals. */
+  softens?: number;
+  /** Cards drawn after an Exploit lands. */
+  drawsAfterHit?: number;
+}
+
 /** Flat pixel-art sprites available as card art (drawn in render/pixelArt). */
 export type PixelSprite = 'nose' | 'kiddie' | 'horse' | 'toaster' | 'bot' | 'skull' | 'calendar' | 'honeypot' | 'firewall'
-  | 'fork' | 'trash' | 'hdd' | 'rack' | 'cache' | 'cart' | 'door' | 'bandaid' | 'magnifier' | 'hook' | 'gears' | 'screens' | 'padlock' | 'cpu' | 'bug';
+  | 'fork' | 'trash' | 'hdd' | 'rack' | 'cache' | 'cart' | 'door' | 'bandaid' | 'magnifier' | 'hook' | 'gears' | 'screens' | 'padlock' | 'cpu' | 'bug'
+  | 'cloud' | 'hello' | 'balancer' | 'stash' | 'intern' | 'duck' | 'bounty' | 'cron' | 'backup' | 'raid' | 'rug' | 'container' | 'sandwich' | 'baton'
+  | 'crowbar' | 'worm' | 'syringe' | 'keyboard' | 'overflow' | 'bomb' | 'phone' | 'ransom' | 'mitm'
+  | 'twofa' | 'captcha' | 'vpn' | 'watchdog' | 'scissors' | 'tripwire' | 'sandbox';
 
 export interface CardDef {
   id: string;
@@ -16,7 +32,8 @@ export interface CardDef {
   kind: CardKind;
   /** Program subtypes. */
   exploit?: boolean; // attack: targets the opponent
-  daemon?: boolean; // reaction: blocks exploits from hand
+  daemon?: boolean; // reaction: responds to exploits from hand
+  reaction?: DaemonReaction;
   credits?: number; // currency value
   vp?: number;
   /** Rules text shown on the card. Use \n for line breaks. */
@@ -110,6 +127,7 @@ const defs: CardDef[] = [
     text: '+2 Cards\nDaemon: while in your\nhand, blocks Exploits\ntargeting you.',
     flavor: 'DROP ALL INPUT',
     art: ['|#|#|#|', '|#|#|#|', '|#|#|#|'], sprite: 'firewall',
+    reaction: { blocks: true },
     *effect(c) { c.draw(2); },
   },
   {
@@ -274,6 +292,7 @@ const defs: CardDef[] = [
     text: '+2 CR\nDaemon: while in hand,\nblocks Exploits and\nBreaches attacker 2.',
     flavor: 'come on in. it is warm.',
     art: ['  ___  ', ' (___) ', ' |HNY| ', ' |___| '], sprite: 'honeypot',
+    reaction: { blocks: true, *onBlock(_me, attacker) { attacker.breach(2); } },
     *effect(c) { c.credits(2); },
   },
   {
@@ -306,6 +325,319 @@ const defs: CardDef[] = [
     flavor: 'AES-256. good luck.',
     art: ['  .-.  ', ' |   | ', '[=====]', '[ KEY ]'], sprite: 'padlock',
     *effect(c) { c.draw(1); c.cycles(1); c.shield(3); },
+  },
+  // ───────────── PROGRAMS · SET 2 ─────────────
+  {
+    id: 'helloworld', name: 'Hello World', cost: 1, kind: 'program', givesCycles: 1,
+    text: '+1 Cycle\n+1 CR\nTrash this card.',
+    flavor: 'your first and last program.',
+    art: [], sprite: 'hello',
+    *effect(c) { c.cycles(1); c.credits(1); c.trashSelf(); },
+  },
+  {
+    id: 'loadbalancer', name: 'Load Balancer', cost: 2, kind: 'program', givesCycles: 1,
+    text: '+1 Cycle\nDiscard up to 3 cards,\nthen draw that many.',
+    flavor: 'round robin, round robin.',
+    art: [], sprite: 'balancer',
+    *effect(c) {
+      c.cycles(1);
+      const picks: number[] = yield c.promptHand({ min: 0, max: 3, purpose: 'cycle', title: 'DISCARD UP TO 3, THEN DRAW THAT MANY' });
+      c.discardFromHand(picks);
+      c.draw(picks.length);
+    },
+  },
+  {
+    id: 'gitstash', name: 'Git Stash', cost: 2, kind: 'program', givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\nPut a card from your\nhand on your deck.',
+    flavor: "i'll get back to it.",
+    art: [], sprite: 'stash',
+    *effect(c) {
+      c.draw(1); c.cycles(1);
+      const picks: number[] = yield c.promptHand({ min: 1, max: 1, purpose: 'topdeck', title: 'PUT A CARD ON TOP OF YOUR DECK' });
+      c.putOnDeck(picks);
+    },
+  },
+  {
+    id: 'intern', name: 'The Intern', cost: 2, kind: 'program',
+    text: '+1 CR\nYou may trash this to\ngain a card costing\nup to 4.',
+    flavor: 'unpaid. unsupervised. has prod access.',
+    art: [], sprite: 'intern',
+    *effect(c) {
+      c.credits(1);
+      if (!c.self || !c.me.inPlay.includes(c.self)) return;
+      const pile: string | null = yield c.promptSupply({ maxCost: 4, title: 'PROMOTE THE INTERN: GAIN A CARD UP TO 4' });
+      if (pile) { c.trashSelf(); c.gain(pile, 'discard'); }
+    },
+  },
+  {
+    id: 'rubberduck', name: 'Rubber Duck', cost: 3, kind: 'program', givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\nYou may trash a\nMalware from hand.',
+    flavor: 'quack.',
+    art: [], sprite: 'duck',
+    *effect(c) {
+      c.draw(1); c.cycles(1);
+      const picks: number[] = yield c.promptHand({ min: 0, max: 1, purpose: 'trash', title: 'YOU MAY TRASH A MALWARE', filter: (d) => d.kind === 'malware' });
+      c.trashFromHand(picks);
+    },
+  },
+  {
+    id: 'bugbounty', name: 'Bug Bounty', cost: 3, kind: 'program',
+    text: '+1 CR\nYou may trash a Malware\nfrom hand for +2 CR.',
+    flavor: 'responsible disclosure pays.',
+    art: [], sprite: 'bounty',
+    *effect(c) {
+      c.credits(1);
+      const picks: number[] = yield c.promptHand({ min: 0, max: 1, purpose: 'trash', title: 'TRASH A MALWARE FOR +2 CR', filter: (d) => d.kind === 'malware' });
+      if (picks.length) { c.trashFromHand(picks); c.credits(2); }
+    },
+  },
+  {
+    id: 'cronjob', name: 'Cron Job', cost: 3, kind: 'program',
+    text: '+1 CR\nNext turn start:\n+1 CR and +1 Card.',
+    flavor: '0 0 * * * ./profit',
+    art: [], sprite: 'cron',
+    *effect(c) {
+      c.credits(1);
+      c.atNextTurn(() => { c.credits(1); c.draw(1); });
+    },
+  },
+  {
+    id: 'backup', name: 'Backup', cost: 3, kind: 'program',
+    text: 'Put a card from your\ndiscard into your hand.',
+    flavor: 'you do have one, right?',
+    art: [], sprite: 'backup',
+    *effect(c) {
+      const held = new Set(c.me.discard.map((x) => x.def));
+      const pile: string | null = yield c.promptSupply({
+        maxCost: Infinity, anyStock: true, title: 'RESTORE A CARD FROM YOUR DISCARD',
+        filter: (d) => held.has(d.id),
+      });
+      if (pile) c.recover(pile);
+    },
+  },
+  {
+    id: 'raidarray', name: 'RAID Array', cost: 4, kind: 'program', givesCycles: 1,
+    text: '+1 Cycle\n+1 CR per different\nCurrency in your hand.',
+    flavor: 'redundant. redundant.',
+    art: [], sprite: 'raid',
+    *effect(c) {
+      c.cycles(1);
+      c.credits(new Set(c.me.hand.filter((x) => c.def(x).kind === 'currency').map((x) => x.def)).size);
+    },
+  },
+  {
+    id: 'exitscam', name: 'Exit Scam', cost: 4, kind: 'program',
+    text: '+1 Bandwidth\nYou may trash a Data\nfrom hand for CR equal\nto its cost.',
+    flavor: 'thanks for the liquidity.',
+    art: [], sprite: 'rug',
+    *effect(c) {
+      c.bandwidth(1);
+      const picks: number[] = yield c.promptHand({ min: 0, max: 1, purpose: 'trash', title: 'YOU MAY CASH OUT A DATA CARD', filter: (d) => d.kind === 'data' });
+      if (picks.length) {
+        const cost = c.def(c.me.hand[picks[0]]).cost;
+        c.trashFromHand(picks);
+        c.credits(cost);
+      }
+    },
+  },
+  {
+    id: 'container', name: 'Container', cost: 4, kind: 'program',
+    text: 'Run a Program from the\nsupply costing up to 3,\nwithout gaining it.',
+    flavor: 'works on my machine.',
+    art: [], sprite: 'container',
+    *effect(c) {
+      const pile: string | null = yield c.promptSupply({ maxCost: 3, title: 'RUN A PROGRAM COSTING UP TO 3', filter: (d) => d.kind === 'program' });
+      if (pile) yield* c.runFromSupply(pile);
+    },
+  },
+  {
+    id: 'cloudcompute', name: 'Cloud Compute', cost: 5, kind: 'program', givesCycles: 1,
+    text: '+1 Cycle\n+1 Card per Program\nyou have in play.',
+    flavor: "there is no cloud. just someone else's computer.",
+    art: [], sprite: 'cloud',
+    *effect(c) {
+      c.cycles(1);
+      c.draw(c.me.inPlay.filter((x) => c.def(x).kind === 'program').length);
+    },
+  },
+  {
+    id: 'sudo', name: 'Sudo', cost: 6, kind: 'program',
+    text: 'Gain a card costing\nup to 5, into your hand.',
+    flavor: 'make me a sandwich.',
+    art: [], sprite: 'sandwich',
+    *effect(c) {
+      const pile: string | null = yield c.promptSupply({ maxCost: 5, title: 'GAIN A CARD UP TO 5 (TO HAND)' });
+      if (pile) c.gain(pile, 'hand');
+    },
+  },
+  {
+    id: 'orchestrator', name: 'Orchestrator', cost: 6, kind: 'program', givesCycles: 2,
+    text: '+2 Cards\n+2 Cycles\n+1 Bandwidth',
+    flavor: "it's yaml all the way down.",
+    art: [], sprite: 'baton',
+    *effect(c) { c.draw(2); c.cycles(2); c.bandwidth(1); },
+  },
+  // ───────────── EXPLOITS · SET 2 ─────────────
+  {
+    id: 'bruteforce', name: 'Brute Force', cost: 3, kind: 'program', exploit: true,
+    text: 'Exploit: Breach 2.\nIgnores Shield.',
+    flavor: 'aaaa. aaab. aaac.',
+    art: [], sprite: 'crowbar',
+    *effect(c) {
+      yield* c.exploit(function* (t) { t.breach(2, true); });
+    },
+  },
+  {
+    id: 'worm', name: 'Worm', cost: 3, kind: 'program', exploit: true,
+    text: 'Gain a Worm.\nExploit: Breach 1.',
+    flavor: "i'm in your LAN, copying your LAN.",
+    art: [], sprite: 'worm',
+    *effect(c) {
+      c.gain('worm', 'discard');
+      yield* c.exploit(function* (t) { t.breach(1); });
+    },
+  },
+  {
+    id: 'sqlinjection', name: 'SQL Injection', cost: 4, kind: 'program', exploit: true,
+    text: "+2 CR\nExploit: trash the top\ncard of opponent's deck.",
+    flavor: "'; DROP TABLE decks;--",
+    art: [], sprite: 'syringe',
+    *effect(c) {
+      c.credits(2);
+      yield* c.exploit(function* (t) { t.trashTop(); });
+    },
+  },
+  {
+    id: 'keylogger', name: 'Keylogger', cost: 4, kind: 'program', exploit: true,
+    text: "Exploit: +1 CR per\nCurrency in opponent's\nhand.",
+    flavor: 'hunter2',
+    art: [], sprite: 'keyboard',
+    *effect(c) {
+      yield* c.exploit(function* (t) {
+        c.credits(t.me.hand.filter((x) => t.def(x).kind === 'currency').length);
+      });
+    },
+  },
+  {
+    id: 'bufferoverflow', name: 'Buffer Overflow', cost: 4, kind: 'program', exploit: true,
+    text: '+2 Cards\nExploit: Breach 1 per\ncard in hand above 5.',
+    flavor: 'AAAAAAAAAAAAAAAA',
+    art: [], sprite: 'overflow',
+    *effect(c) {
+      c.draw(2);
+      const n = Math.max(0, c.me.hand.length - 5);
+      yield* c.exploit(function* (t) { t.breach(n); });
+    },
+  },
+  {
+    id: 'logicbomb', name: 'Logic Bomb', cost: 4, kind: 'program', exploit: true,
+    text: 'Exploit: at the start of\nyour next turn, Breach 4.',
+    flavor: 'if (fired) rm -rf /',
+    art: [], sprite: 'bomb',
+    *effect(c) {
+      yield* c.exploit(function* (t) { c.atNextTurn(() => t.breach(4)); });
+    },
+  },
+  {
+    id: 'socialengineering', name: 'Social Engineering', cost: 4, kind: 'program', exploit: true,
+    text: "+1 CR\nExploit: Breach 2.\nCan't be blocked\nby Daemons.",
+    flavor: "hi, it's IT. what's your password?",
+    art: [], sprite: 'phone',
+    *effect(c) {
+      c.credits(1);
+      yield* c.exploit(function* (t) { t.breach(2); }, { unblockable: true });
+    },
+  },
+  {
+    id: 'ransomware', name: 'Ransomware', cost: 5, kind: 'program', exploit: true,
+    text: 'Exploit: opponent\ndiscards 2 cards or\ntakes Breach 4.',
+    flavor: 'send 0.5 BTC to unlock your hand.',
+    art: [], sprite: 'ransom',
+    *effect(c) {
+      yield* c.exploit(function* (t) {
+        const picks: number[] = yield t.promptHand({ min: 0, max: 2, purpose: 'ransom', title: 'PICK 2 TO DISCARD, OR FEWER TO TAKE BREACH 4' });
+        if (picks.length === 2) t.discardFromHand(picks);
+        else t.breach(4);
+      });
+    },
+  },
+  {
+    id: 'mitm', name: 'Man-in-the-Middle', cost: 5, kind: 'program', exploit: true,
+    text: "+1 CR\nExploit: if opponent's\ntop card is Currency,\ntrash it, gain a copy.",
+    flavor: 'tell bob i said hi.',
+    art: [], sprite: 'mitm',
+    *effect(c) {
+      c.credits(1);
+      yield* c.exploit(function* (t) {
+        const top = t.g.topCard(t.p);
+        if (!top || t.def(top).kind !== 'currency') return;
+        t.trashTop();
+        c.gain(top.def, 'discard');
+      });
+    },
+  },
+  // ───────────── DAEMONS · SET 2 ─────────────
+  {
+    id: 'twofactor', name: '2FA', cost: 2, kind: 'program', daemon: true,
+    text: '+1 CR\nDaemon: discard this\nfrom hand to block\nan Exploit.',
+    flavor: 'enter the code we sent to your old phone.',
+    art: [], sprite: 'twofa',
+    reaction: { blocks: true, discards: true },
+    *effect(c) { c.credits(1); },
+  },
+  {
+    id: 'captcha', name: 'CAPTCHA', cost: 3, kind: 'program', daemon: true,
+    text: '+1 Bandwidth\n+1 CR\nDaemon: blocks Exploits.\nAttacker discards 1.',
+    flavor: 'select all squares with regret.',
+    art: [], sprite: 'captcha',
+    reaction: {
+      blocks: true,
+      *onBlock(_me, attacker) {
+        const picks: number[] = yield attacker.promptHand({ min: 1, max: 1, purpose: 'discard', title: 'CAPTCHA FAILED: DISCARD A CARD' });
+        attacker.discardFromHand(picks);
+      },
+    },
+    *effect(c) { c.bandwidth(1); c.credits(1); },
+  },
+  {
+    id: 'vpn', name: 'VPN', cost: 3, kind: 'program', daemon: true, givesCycles: 1,
+    text: '+1 Card\n+1 Cycle\nDaemon: Exploits deal\n2 less Breach to you.',
+    flavor: "i'm in the netherlands now.",
+    art: [], sprite: 'vpn',
+    reaction: { softens: 2 },
+    *effect(c) { c.draw(1); c.cycles(1); },
+  },
+  {
+    id: 'watchdog', name: 'Watchdog', cost: 3, kind: 'program', daemon: true, givesCycles: 1,
+    text: '+1 Cycle\nRestore 2 Integrity.\nDaemon: after an Exploit\nhits you, draw 2.',
+    flavor: 'woof(1)',
+    art: [], sprite: 'watchdog',
+    reaction: { drawsAfterHit: 2 },
+    *effect(c) { c.cycles(1); c.heal(2); },
+  },
+  {
+    id: 'airgap', name: 'Air Gap', cost: 3, kind: 'program', daemon: true,
+    text: "+6 Shield\nYou can't buy this turn.\nDaemon: blocks Exploits.",
+    flavor: 'unplug it. no, the other one.',
+    art: [], sprite: 'scissors',
+    reaction: { blocks: true },
+    *effect(c) { c.shield(6); c.me.noBuy = true; },
+  },
+  {
+    id: 'tripwire', name: 'Tripwire', cost: 4, kind: 'program', daemon: true,
+    text: '+1 Card\n+1 Bandwidth\nDaemon: blocks Exploits.\nAttacker gains Malware.',
+    flavor: 'alert tcp any any -> $HOME',
+    art: [], sprite: 'tripwire',
+    reaction: { blocks: true, *onBlock(_me, attacker) { attacker.gain('malware', 'discard'); } },
+    *effect(c) { c.draw(1); c.bandwidth(1); },
+  },
+  {
+    id: 'sandbox', name: 'Sandbox', cost: 5, kind: 'program', daemon: true,
+    text: '+2 Cards\nDaemon: blocks Exploits.\nGain a copy of it.',
+    flavor: 'detonated safely. mostly.',
+    art: [], sprite: 'sandbox',
+    reaction: { blocks: true, *onBlock(me, _attacker, exploit) { if (exploit) me.gain(exploit, 'discard'); } },
+    *effect(c) { c.draw(2); },
   },
 ];
 
