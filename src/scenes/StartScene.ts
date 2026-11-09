@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { sfx } from '../audio/sfx';
 import type { Difficulty } from '../engine/ai';
-import { ALL_CARDS } from '../engine/cards';
+import { ALL_CARDS, INDEX_CARDS } from '../engine/cards';
 import { compact, touch } from '../mobile';
 import { CardView } from '../render/cardView';
 import { CardInspector } from '../render/inspector';
@@ -31,7 +31,7 @@ const VOLUME_ROW = 5;
 const TITLE_Y = compact ? 720 : 680;
 const INDEX = compact
   ? { perPage: 14, s: 1.3, x: (col: number) => 155 + col * 215, y: (row: number) => 680 - row * 285, cols: 7 }
-  : { perPage: 15, s: 0.95, x: (col: number) => 800 + (col - 2) * 165, y: (row: number) => 700 - row * 225, cols: 5 };
+  : { perPage: 18, s: 0.95, x: (col: number) => 800 + (col - 2.5) * 165, y: (row: number) => 700 - row * 225, cols: 6 };
 const INDEX_PAGES = Math.ceil(ALL_CARDS.length / INDEX.perPage);
 
 interface MenuRow { label: () => string; run: () => void }
@@ -265,7 +265,7 @@ export class StartScene implements SceneLike {
   private layoutIndex() {
     const start = this.indexPage * INDEX.perPage;
     this.indexCards.forEach((v, i) => {
-      const d = ALL_CARDS[start + i];
+      const d = INDEX_CARDS[start + i];
       v.group.visible = !!d;
       if (!d) return;
       v.setDef(d.id);

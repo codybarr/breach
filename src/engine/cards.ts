@@ -643,6 +643,10 @@ const defs: CardDef[] = [
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(defs.map((d) => [d.id, d]));
 export const ALL_CARDS = defs;
+const indexGroup = (d: CardDef) =>
+  d.kind === 'currency' ? 0 : d.kind === 'data' ? 1 : d.kind === 'malware' ? 2 : d.exploit ? 4 : d.daemon ? 5 : 3;
+/** Card index order: currency, data, malware, programs, exploits, daemons, cheapest first within each group. */
+export const INDEX_CARDS = [...defs].sort((a, b) => indexGroup(a) - indexGroup(b) || a.cost - b.cost);
 export const BASIC_PILES = ['megabyte', 'gigabyte', 'terabyte', 'node', 'server', 'mainframe', 'malware'];
 export const KINGDOM_POOL = defs.filter((d) => d.kind === 'program').map((d) => d.id);
 
