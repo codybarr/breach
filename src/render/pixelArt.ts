@@ -201,39 +201,35 @@ const NOSE: SpriteDef = {
 const KIDDIE: SpriteDef = {
   shadeRight: true,
   rows: [
-    '.....o...............o.....',
-    '.....oo.............oo.....',
-    '.....omo...........omo.....',
-    '.....omho..ooooo..ohmo.....',
-    '.....omhmoommmmmoomhmo.....',
-    '.....omllllnnnnnllllmo.....',
-    '.....omlllnnnnnnnlllmo.....',
-    '....omlllnnnnnnnnnlllmo....',
-    '....omllnncnnnnncnnllmo....',
-    '....omllncncnnncncnllmo....',
-    '....omllnncnnnnncnnllmo....',
-    '.wwwomllnnnnnhnnnnnllmowww.',
-    '..wwomllnnnnnnnnnnnllmoww..',
-    '....omlllnnnnnnnnnlllmo....',
-    '...omllllmnnnnnnnmllllmo...',
-    '..omlllllllmmmmmlllllllmo..',
-    '.omlllGGGGGGGGGGGGGGGlllmo.',
-    'omllllGgggggggggggggGllllmo',
-    'omllllGggggwwwwwggggGllllmo',
-    'omllllGggggwnwnwggggGllllmo',
-    'omllllGggggwwwwwggggGllllmo',
-    'omllllGggggwgwgwggggGllllmo',
-    'ommmmmGgggggggggggggGmmmmmo',
-    'oooGGGGGGGGGGGGGGGGGGGGGooo',
+    '...o...............o...',
+    '...oo.............oo...',
+    '...omo...........omo...',
+    '...omho..ooooo..ohmo...',
+    '...omhmoommmmmoomhmo...',
+    '...omllllnnnnnllllmo...',
+    '...omlllnnnnnnnlllmo...',
+    '..omlllnnnnnnnnnlllmo..',
+    '..omllnncnnnnncnnllmo..',
+    '..omllncncnnncncnllmo..',
+    '..omllnncnnnnncnnllmo..',
+    'wwomllnnnnnhnnnnnllmoww',
+    '.womllnnnnnnnnnnnllmow.',
+    '..omlllnnnnnnnnnlllmo..',
+    '..omllllmnnnnnmllllmo..',
+    '.omlllllllmmmlllllllmo.',
+    '.omllGGGGGGGGGGGGGllmo.',
+    '.omllGgggggggggggGllmo.',
+    '.omllGgggwwwwwgggGllmo.',
+    '.omllGgggwnwnwgggGllmo.',
+    '.omllGgggwwwwwgggGllmo.',
+    '.omllGgggwgwgwgggGllmo.',
+    '.ommmGgggggggggggGmmmo.',
+    '.oooGGGGGGGGGGGGGGGooo.',
   ],
-
-
   // Copy once on the left; paste over and over on the right, fading as it climbs.
-  decorate({ gw, sw, nx, ny, glyphs }) {
-    const left = Math.max(1, Math.floor((nx - 7) / 2));
-    const right = nx + sw + Math.max(1, Math.floor((gw - nx - sw - 7) / 2));
-    glyphs('^C', left, ny + 8, COLOR.cyan, 0.95);
-    for (let i = 0; i < 3; i++) glyphs('^V', right, ny + 14 - i * 6, COLOR.cyan, 0.95 - i * 0.3);
+  decorate({ sw, nx, ny, glyphs }) {
+    glyphs('^C', nx - 8, ny + 4, COLOR.cyan, 0.95);
+    for (let i = 0; i < 3; i++) glyphs('^V', nx + sw + 1, ny + 14 - i * 6, COLOR.cyan, 0.95 - i * 0.3);
   },
 };
 
@@ -466,38 +462,41 @@ const CALENDAR: SpriteDef = {
 const HONEYPOT: SpriteDef = {
   shadeRight: true,
   rows: [
-    '...................oAo.....',
-    '..................oAo......',
-    '.................oAo.......',
-    '................oAo........',
-    '...oooooooooooooAooooooo...',
-    '...oaaaaaaaaaaaaAaaaaaAo...',
-    '...oaaaaaaaaaaaaAaaaaaAo...',
-    '...omaaaaaaaaaAmaaaaaAmo...',
-    '.....oaaAddaaaAddaaaAo.....',
-    '....ohaAlllaaaAlllaaAlo....',
-    '...ohlaAllllaAllllaAlllo...',
-    '..ohllllllllaAllllaAllllo..',
-    '.ohlllllllGGGGGGGlaAlllllo.',
-    '.ohlllllllGGaaaGGllllllllo.',
-    '.ohlllllllGaGGGaGllllllllo.',
-    '.ohlllllllGGaaaGGllllllllo.',
-    '.ohlllllllGGGGGGGllllllllo.',
-    '..ohllllllllllllllllllllo..',
-    '...ohllllllllllllllllllo...',
-    '.....ooooooooooooooooo.....',
-    '......kkkkkkkkkkkkkkk......',
+    '..............oAo..',
+    '.............oAo...',
+    '............oAo....',
+    '...........oAo.....',
+    '..oooooooooAooooo..',
+    '..oaaaaaaaaAaaaAo..',
+    '..oaaaaaaaaAaaaAo..',
+    '..omaaaaaaAmaaAmo..',
+    '...oaAddaaAddaAo...',
+    '..ohaAlllaAllaAlo..',
+    '.ohlaAllllaAlllAlo.',
+    'ohlllaAlllaAlllAllo',
+    'ohllllGGGGGGGlaAllo',
+    'ohllllGGaaaGGlllllo',
+    'ohllllGaGGGaGlllllo',
+    'ohllllGGaaaGGlllllo',
+    'ohllllGGGGGGGlllllo',
+    'ohllllllllllllllllo',
+    'ohllllllllllllllllo',
+    'ohllllllllllllllllo',
+    '.ohllllllllllllllo.',
+    '..ohllllllllllllo..',
+    '...ooooooooooooo...',
+    '....kkkkkkkkkkk....',
   ],
-  // Curious packets buzz in from all sides, each trailing a wiggly dotted path.
-  decorate({ gw, gh, sw, nx, ny, rnd, lit }) {
+  // Curious packets buzz in close around the pot, each trailing a short wiggly path.
+  decorate({ gh, sw, nx, ny, rnd, lit }) {
     const cx = nx + sw / 2, cy = ny + 7;
-    const flies: [number, number][] = [[3, 3], [6, 15], [2, 22], [gw - 4, 4], [gw - 7, 14], [gw - 3, 21]];
+    const flies: [number, number][] = [[nx - 4, ny + 4], [nx - 6, ny + 16], [nx + sw + 3, ny + 7], [nx + sw + 5, ny + 18]];
     for (const [fx, fy] of flies) {
       const dx = cx - fx, dy = cy - fy, len = Math.hypot(dx, dy);
       const ux = dx / len, uy = dy / len, phase = rnd() * 6;
-      for (let i = 0; i <= 6; i++) {
+      for (let i = 0; i <= 3; i++) {
         const t = i * 1.5, w = Math.sin(phase + i * 1.3) * 1.2;
-        lit(Math.round(fx - ux * t - uy * w), Math.round(Math.min(gh - 1, fy - uy * t + ux * w)), COLOR.cyan, 0.75 - i * 0.1);
+        lit(Math.round(fx - ux * t - uy * w), Math.round(Math.min(gh - 1, fy - uy * t + ux * w)), COLOR.cyan, 0.75 - i * 0.15);
       }
       lit(Math.round(fx + ux), Math.round(fy + uy), COLOR.cyan, 0.95);
     }
@@ -549,52 +548,52 @@ const FIREWALL: SpriteDef = {
 };
 
 /**
- * Fork: a dinner fork, and off either side of it a process tree, each child
- * spawning children of its own.
+ * Fork: a slim dinner fork, and off either side of it a small process tree,
+ * each parent with two children.
  */
 
 const FORK: SpriteDef = {
   rows: [
-    'ooo.ooo.ooo.ooo',
-    'owo.owo.owo.owo',
-    'owo.owo.owo.owo',
-    'owo.owo.owo.owo',
-    'owo.owo.owo.owo',
-    'owo.owo.owo.owo',
-    'owo.owo.owo.owo',
-    'owwwwwwwwwwwwGo',
-    'owGGGGGGGGGGGgo',
-    '.owGGGGGGGGGgo.',
-    '..owGGGGGGGgo..',
-    '...owGGGGGgo...',
-    '....owGGGgo....',
-    '.....owGgo.....',
-    '.....owGgo.....',
-    '.....owGgo.....',
-    '.....owGgo.....',
-    '.....owGgo.....',
-    '.....owGgo.....',
-    '.....owGgo.....',
-    '....owGGGgo....',
-    '....owGGGgo....',
-    '....owGGGgo....',
-    '.....ooooo.....',
+    'ooo.ooo.ooo',
+    'owo.owo.owo',
+    'owo.owo.owo',
+    'owo.owo.owo',
+    'owo.owo.owo',
+    'owo.owo.owo',
+    'owo.owo.owo',
+    'owwwwwwwwGo',
+    'owGGGGGGGgo',
+    '.owGGGGGgo.',
+    '..owGGGgo..',
+    '...owGgo...',
+    '...owGgo...',
+    '...owGgo...',
+    '...owGgo...',
+    '...owGgo...',
+    '...owGgo...',
+    '...owGgo...',
+    '...owGgo...',
+    '...owGgo...',
+    '..owGGGgo..',
+    '..owGGGgo..',
+    '..owGGGgo..',
+    '...ooooo...',
   ],
   decorate({ sw, nx, ny, lit }) {
     const node = (x: number, y: number, a: number) => { lit(x, y, COLOR.cyan, a); lit(x + 1, y, COLOR.cyan, a); lit(x, y + 1, COLOR.cyan, a); lit(x + 1, y + 1, COLOR.cyan, a); };
     const branch = (x: number, y: number, dir: number, spread: number, depth: number) => {
-      const xe = x + dir * 5;
+      const xe = x + dir * (depth ? 2 : 3);
       for (let gx = x; gx !== xe; gx += dir) if ((gx - x) % 2 === 0) lit(gx, y, COLOR.cyan, 0.35);
-      node(dir < 0 ? xe - 1 : xe, y, 0.95 - depth * 0.25);
-      if (depth === 2) return;
+      node(dir < 0 ? xe - 1 : xe, y, 0.95 - depth * 0.3);
+      if (depth === 1) return;
       for (const s of [-1, 1]) {
         const yc = y + s * spread, xc = dir < 0 ? xe - 1 : xe + 1;
         for (let gy = y + s * 2; gy !== yc; gy += s) if ((gy - y) % 2 === 0) lit(xc, gy, COLOR.cyan, 0.35);
-        branch(xc + dir, yc, dir, spread / 2, depth + 1);
+        branch(xc + dir, yc, dir, 0, depth + 1);
       }
     };
-    branch(nx - 1, ny + 9, -1, 6, 0);
-    branch(nx + sw, ny + 9, 1, 6, 0);
+    branch(nx - 1, ny + 9, -1, 5, 0);
+    branch(nx + sw, ny + 9, 1, 5, 0);
   },
 };
 
@@ -936,44 +935,38 @@ const LENS: SpriteDef = {
   },
 };
 
-/**
- * Phishing: an envelope on a hook, dangled under the surface. A curious fish
- * noses in; bubbles rise.
- */
-
+/** Phishing: a fat fish caught through the lip on a barbed hook, the line running up out of frame. */
 const HOOK: SpriteDef = {
   rows: [
-    '.............g.......',
-    '.............g.......',
-    '.............g.......',
-    '............oGo......',
-    '............G.G......',
-    '............oGo......',
-    '............owG......',
-    '............owG......',
-    '.......o....owG......',
-    '......owo...owG......',
-    '......owo...owG......',
-    '......owwo..owG......',
-    '......owowo.owG......',
-    '......owoo..owo......',
-    '..GGGGowooGoowoGGGG..',
-    '..GGwwoowooowoowwGG..',
-    '..GwGGwowwwwwowGGwG..',
-    '..GwwwGGoooooGGwwwG..',
-    '..GwwwwwGwwwGwwwwwG..',
-    '..GwwwwwwGGGwwwwwwG..',
-    '..GwwwwwwwwwwwwwwwG..',
-    '..GwwwwwwwwwwwwwwwG..',
-    '..GGGGGGGGGGGGGGGGG..',
-    '.....................',
+    '...................................g..',
+    '..................................oGo.',
+    '..................................G.G.',
+    '..................................oGo.',
+    '..................................owG.',
+    '..................................owG.',
+    '..................................owG.',
+    '...............oooooo.............owG.',
+    '..............ohhhho..............owG.',
+    '..oo.......oooohllhoooo...........owG.',
+    '..ohoo...oohhhhhhhhhhhhoo.........owG.',
+    '..ollmo.ohhlllllllllllhhhoo.......owG.',
+    '..omllmohllmlllmlllmllwwwowo......owG.',
+    '...omlmmlllmlllmlllmllwnwowoo.....owG.',
+    '....omlmlllmlllmlllmllwwwowGwo....owG.',
+    '...omlmmlmmlmmlmlllmllllmowooo....owG.',
+    '..omllmommmmmmmmmlmmmmmmoowo......owG.',
+    '..omlmo.oommmmmdddmmmmoo.owo......owG.',
+    '..ooo....oooddoooooooo...owo.....owwG.',
+    '............ooo..........owGo...owwGo.',
+    '..........................owwoooowwGo.',
+    '...........................owwwwwGGo..',
+    '............................oGGGGoo...',
+    '.............................oooo.....',
   ],
-  decorate({ gw, nx, ny, rnd, pal, lit }) {
-    for (let gx = 0; gx < gw; gx++) if ((gx + 1) % 4 !== 0) lit(gx, Math.round(Math.sin(gx * 0.7)), COLOR.cyan, 0.35);
-    const FISH = ['..###...#', '.#####.##', '#.######.', '.#####.##', '..###...#'];
-    const fx = Math.max(0, nx - 12), fy = ny + 14;
-    FISH.forEach((row, dy) => [...row].forEach((ch, dx) => { if (ch === '#') lit(fx + 8 - dx, fy + dy, pal.l, 0.55); }));
-    for (let i = 0; i < 9; i++) lit(nx + 22 + Math.floor(rnd() * 8), ny + 3 + Math.floor(rnd() * 18), COLOR.cyan, 0.2 + rnd() * 0.35);
+  // The line carries on up to the top of the window; a couple of bubbles.
+  decorate({ nx, ny, lit }) {
+    for (let y = 0; y < ny; y++) lit(nx + 35, y, '#30383e', 1);
+    for (const [x, y, a] of [[-3, 4, 0.7], [-5, 1, 0.45], [-2, -1, 0.3]]) lit(nx + x, ny + y, COLOR.cyan, a);
   },
 };
 
@@ -1261,110 +1254,106 @@ const BALANCER: SpriteDef = {
   },
 };
 
-/** Git Stash: a hand tucking banknotes under the lifted corner of a mattress, for later. */
+/** Git Stash: an open treasure chest heaped with gold, for later. */
 const STASH: SpriteDef = {
+  shadeRight: true,
   rows: [
-    '........................................',
-    '.......................ooo..............',
-    '......................ohhmo.............',
-    '.....................ohllmo.............',
-    '....................ohllldo.............',
-    '..................oohmllldo.............',
-    'ooo..............ohhlmllldo.............',
-    'oho..oooooooooo.ohlllmllldo.............',
-    'omo.ohhhhhhhhhhohmlllmlmmoAAAAAAAA......',
-    'omo.ohhhhhhhhllolmlllmmddoaaaaaaaA......',
-    'omo.ohhhhhhhlllolmlllmdooaaaaaaaaoooo...',
-    'omo.ooooooooooollmllmdoAAAAAAAoooohhhoGg',
-    'omoohhhhhhhhlmlllmmmdoaaAaaaoohhhhhhloGg',
-    'omoolmlllmlllmlllmddoaaAAAaaaaoooohhloGg',
-    'omoolmlllmlllmlmmdooaaAaAaaaoohhhhhhmoGg',
-    'omoolmlllmlllmmddoaaaaaAAAaaaaoooohhmoGg',
-    'omoolmlllmllmddooaaaaaaaAaAaoohhhhhhmoGg',
-    'omoommmmmmmmdooAaaaaaaaAAAaaaaoooohmmoGg',
-    'omooddddddddokkAaaaaaaaaAaaaaohhhhmmooGg',
-    'omo.ooooooookkkAAAAAAAAAAAAAAAoooooo....',
-    'omoddddddddddddddddddddddddo............',
-    'oooooooooooooooooooooooooooo............',
-    '....odo................odo..............',
-    '....odo................odo..............',
+    '......oooooooooooooooooo......',
+    '....oohhGhhhhhhhhhhhhGhhoo....',
+    '...ohlllGllllllllllllGlllho...',
+    '..ohllGnnnnnnnnnnnnnnnnGllho..',
+    '..ohllGnnAAAAAAAAAAAAnnGllho..',
+    '..ommmGnAAaaaaaaaaaaAAnGmmmo..',
+    '..oooooooooooooooooooooooooo..',
+    '..onnnnAaaaawaaaaaaaaaAnnnno..',
+    '..onnAaaawaaAaaaaAaaawaaAnno..',
+    '..oAaaAaawaaaAaaAaaaAawaaAao..',
+    '.GGGGGGGGGGGGGGGGGGGGGGGGGGGG.',
+    '.GwwwwwwwwwwwwwwwwwwwwwwwwwwG.',
+    '.oooooooooooooooooooooooooooo.',
+    '.oGhhllllllllGddGllllllllhhGo.',
+    '.oGhlllllllllGddGlllllllllhGo.',
+    '.oGhlmmmmmmmoGGGGommmmmmmlhGo.',
+    '.oGhlllllllloGaaGollllllllhGo.',
+    '.oGhlllllllloGnnGollllllllhGo.',
+    '.oGhlmmmmmmmoGGGGommmmmmmlhGo.',
+    '.oGhlllllllllGddGlllllllllhGo.',
+    '.oGhlllllllllGddGlllllllllhGo.',
+    '.oGmmmmmmmmmmGddGmmmmmmmmmmGo.',
+    '.oooooooooooooooooooooooooooo.',
+    '..kkkkkkkkkkkkkkkkkkkkkkkkkk..',
   ],
-  // A few loose glints around the hiding place.
+  // Gold glints rising out of the chest.
   decorate({ nx, ny, rnd, lit }) {
-    for (let i = 0; i < 3; i++) lit(nx + 28 + Math.floor(rnd() * 11), ny + 1 + Math.floor(rnd() * 7), COLOR.amber, 0.25 + rnd() * 0.3);
+    for (let i = 0; i < 10; i++) lit(nx - 3 + Math.floor(rnd() * 36), ny + 1 + Math.floor(rnd() * 8), COLOR.amber, 0.25 + rnd() * 0.5);
   },
 };
 
-/** The Intern: an ID badge on a lanyard, its photo a small nervous face with a grimace and a bead of sweat,
- * beside a steaming mug with a heart on it. Unpaid, unsupervised, has prod access. */
+/** The Intern: a hand with one finger out, about to press the big red button; the safety cover is already flipped up. Has prod access. */
 const INTERN: SpriteDef = {
   rows: [
-    'ohlo.........olmo.......................',
-    '.ohlo.......olmo........................',
-    '..ohlo.....olmo.........................',
-    '...ohlo...olmo..........................',
-    '....ohlo.olmo...........................',
-    '.....ohlolmo............................',
-    '......oGGGo.............................',
-    'oooooooGwGooooooo.......................',
-    'ohhhhhonnnohhhhmo.......................',
-    'ohlllllooolllllmo...oooooooooooooo......',
-    'ohooooooooooooomo..ohhhhhhhhhhhhhmo.....',
-    'ohonnllllllnnnomo..ohAAaAAAAAAAAAmo.....',
-    'ohonmmmnmnmmmnomo..ohhhhhhhhhhhhmmo.....',
-    'ohonmmnmmmnmmcomo..ohllllllllllmmdooooo.',
-    'ohonmwwwmwwwmcomo..ohlllnnlnnllmmdolllo.',
-    'ohonmwnwmwnwmnomo..ohllnnnnnnnlmmdooolmo',
-    'ohonmmmmmmmmmnomo..ohlllnnnnnllmmdo.olmo',
-    'ohonmmwnwnwmmnomo..ohllllnnnlllmmdooolmo',
-    'ohonnmmmmmmmnnomo..ohlllllnllllmmdolllo.',
-    'ohooooooooooooomo..ohllllllllllmmdooooo.',
-    'ohlldndnndnndllmo..ommllllllllmmddo.....',
-    'ommmmmmmmmmmmmmmo...ommmmmmmmmmddo......',
-    'ooooooooooooooooo....oooooooooooo.......',
-    '.kkkkkkkkkkkkkkk.....kkkkkkkkkkkk.......',
+    '.........ooooooooooooooooo...........',
+    '.........oGwwwwwwwwwwwwGgo...........',
+    '.........ooooooooooooooooo...........',
+    '..........ohhhhhhhhhhhhmo............',
+    '.......oooohllllllllllmmo............',
+    '.......ohlohllllllllllmmo............',
+    '.......ohmoohlmoohmohmohmo...........',
+    '........oo.ohlmoolmolmolmo.oooooooooo',
+    '...........ohlmo.oo.oo.oo..oGannaango',
+    '...........ohlmo...........oGnnaanngo',
+    '...........ohlmo..........oGnaannago.',
+    '...........oGwGo..........oGaannaago.',
+    '...........ommmo..........oGnnnnnngo.',
+    '............ooo..........oGncnnnngo..',
+    '.........................oGnncnnngo..',
+    '.......ooooooooooooo.....oGnnncnngo..',
+    '.....oorrwwwrrrrrrrRRo..oGnnnncngo...',
+    '....orrrwwrrrrrrrrrrRRo.oGnnnnnngo...',
+    '....orrrrrrrrrrrrrrrRRo.oGnnnnnngo...',
+    '....orrrrrrrrrrrrrrRRRooooooooooo....',
+    '...oGGGGGGGGGGGGGGGGGGgooGGGGGo......',
+    '.ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhho.',
+    '.oaaannnaaannnaaannnaaannnaaannnaaao.',
+    '.ooooooooooooooooooooooooooooooooooo.',
   ],
-  // Two wisps of steam rising off the mug, fading as they climb.
-  decorate({ nx, ny, lit }) {
-    for (const [x0, h] of [[24, 8], [30, 9]]) {
-      const wiggle = [0, 1, 1, 0, -1, -1, 0, 1, 1];
-      for (let i = 0; i < h; i++) lit(nx + x0 + wiggle[i], ny + 8 - i, COLOR.white, 0.85 - i * 0.08);
-    }
+  // A nervous tremble either side of the fingertip, and nobody around to stop it.
+  decorate({ nx, ny, lit, glyphs }) {
+    glyphs('!', nx + 2, ny + 8, COLOR.red, 0.9);
+    for (const [x, y, a] of [[9, 11, 0.7], [8, 13, 0.45], [17, 11, 0.7], [18, 13, 0.45]]) lit(nx + x, ny + y, COLOR.amber, a);
   },
 };
 
 /** Rubber Duck: a classic debugging duck in side profile, amber bill shut. Its speech bubble offers only "...". */
 const DUCK: SpriteDef = {
   rows: [
-    '..............oooooooo..............',
-    '............oohhhhllllmoo...........',
-    '...........ohhhhhllllllmmo..........',
-    '..........ohhhllllllllllmmo.........',
-    '..........ohhllllllllnnnllmo........',
-    '..........ohlllllllllnwnllmo.....ooo',
-    '..........ohlllllllllnnnllmooooooaao',
-    '..........ohllllllllllllllmoaaaaaaao',
-    '..........ohllllllllllllllmoaaaaaaao',
-    '...........ohlllllllllllllmoooooooo.',
-    '............olllllllllllllmoAAAAAo..',
-    '.oo..........olllllllllllmoooooooo..',
-    'ohmo.........olllllllllllmo.........',
-    'ohlmo...ooooohhhllllllllllmo........',
-    'ohllloohhhhhhlllllllllllllllmo......',
-    'ohllllhhhhhhllllllllllllllllllmo....',
-    'ohlllllllhhhllllllllllllllllllmmo...',
-    'ohllllllloooooooooolllllllllllmmo...',
-    'ohllllloollmmmmmmmmoolllllllllmmo...',
-    'omllllommmmmmmmmmmmmmmoooolllllmmo..',
-    'omlllllloodddddddddddddolllllllmmo..',
-    'omllllllloooooooooooollllllllllmmo..',
-    '.omlllllllllllllllllllllllllllmmo...',
-    '..ommmmmmmmmmmmmmmmmmmmmmmmmmmo.....',
-    '....ooooooooooooooooooooooooo.......',
-    '.....kkkkkkkkkkkkkkkkkkkkkkkkkk.....',
+    '.......oooooooo.........',
+    '.....oohhhhllmmoo.......',
+    '....ohhhhlllllmmo.......',
+    '...ohhllllllllllmo......',
+    '...ohllllllnnnllmo......',
+    '...ohllllllnwnllmo...ooo',
+    '...ohllllllnnnllmooooaao',
+    '...ohlllllllllllmoaaaaao',
+    '...ohlllllllllllmoaaaaao',
+    '....ohllllllllllmooooooo',
+    '....ohllllllllllmoAAAo..',
+    '....olllllllllllmoooo...',
+    '.oo..olllllllllllmo.....',
+    'ohmo.ohhlllllllllllmo...',
+    'ohlmoohhhhlllllllllmo...',
+    'ohllhhhhhllllllllllllmo.',
+    'ohlllllooooooolllllllmo.',
+    'ohlllollmmmmmooollllmmo.',
+    'omlllloddddddddolllllmmo',
+    'omlllllooooooooollllmmo.',
+    '.omlllllllllllllllllmo..',
+    '..ommmmmmmmmmmmmmmmo....',
+    '....oooooooooooooo......',
+    '.....kkkkkkkkkkkkkkk....',
   ],
   decorate({ nx, ny, lit }) {
-    const left = nx + 30, right = nx + 42, top = ny - 2, bottom = ny + 3;
+    const left = nx + 19, right = nx + 27, top = ny - 1, bottom = ny + 3;
     for (let x = left + 1; x < right; x++) {
       lit(x, top, COLOR.cyan, 0.55);
       lit(x, bottom, COLOR.cyan, 0.55);
@@ -1374,7 +1363,7 @@ const DUCK: SpriteDef = {
       lit(right, y, COLOR.cyan, 0.55);
     }
     lit(left + 1, bottom + 1, COLOR.cyan, 0.55);
-    for (const dx of [3, 6, 9]) lit(left + dx, ny, COLOR.cyan, 0.95);
+    for (const dx of [2, 4, 6]) lit(left + dx, ny + 1, COLOR.cyan, 0.95);
   },
 };
 
@@ -1624,116 +1613,103 @@ const CLOUD: SpriteDef = {
 
 /** Sudo: a plain deli ham sandwich on square sliced bread, seen three-quarter. */
 const SUDO: SpriteDef = {
+  // Blank rows hold the pixel size: the sprite's height sets its scale.
   rows: [
-    '..........oooooooooooooooooooooooooo....',
-    '.........oddddddddddddddddddddddddddo...',
-    '........odhhhhhhhhhhhhhhhhhhhhhhhhddo...',
-    '.......odhllllllllhllllllllllhlllddoo...',
-    '......odhllllllhllllllllllhlllllddooo...',
-    '.....odhllllhllllllllllhlllllllddooAo...',
-    '....odhllhllllllllllhlllllllllddooARo...',
-    '...ooooooooooooooooooooooooooddooArro...',
-    '..olllllllllllllllllllllllllldooArRRo...',
-    '..ommmmmmmmmmmmmmmmmmmmmmmmmmooArrrro...',
-    '..oddddddddddddddddddddddddddoARRRRRo...',
-    '..oooooooooooooooooooooooooooArrRRrro...',
-    '..oaaaaaaaaaaaaaaaaaaaaaaaaaaRRRrrRRo...',
-    '..owrwrwrwwRRRRwwwrwrwwRRRRRwrRrrrroo...',
-    '.owwrrwrrwrwwwwwrrwrrrrwwwwwrRrRRRodo...',
-    '.orrRRRRRrwwrwrrrRRRRRwwrwrwrrrrRoddo...',
-    'orRRwwwwwRRrrrwRRwwwwwRrrrwrRRRRoddoo...',
-    'orrwrwrwrwwRRRRwwwrwrwwRRRRRwrRoddooo...',
-    'orwwrrwrrwrwwwwwrrwrrrrwwwwwrRoddooo....',
-    '.oorRRRRRrwwrwrrrRRRRRwwrwrwroddooo.....',
-    '..oRrrrrrRRRRRRrrrrrRRRRRRRrrddooo......',
-    '..olRRRRRllllllRRRRRlllllllRRdooo.......',
-    '..ommmmmmmmmmmmmmmmmmmmmmmmmmooo........',
-    '..oddddddddddddddddddddddddddoo.........',
-    '..oooooooooooooooooooooooooooo..........',
-    '...oooooooooooooooooooooooooo...........',
-    '.....kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.....',
+    '..................................',
+    '..................................',
+    '..................................',
+    '..................................',
+    '..................................',
+    '....oooooooooooooooooooooooooooooo',
+    '...ohhhhhhhhhhhhhhhhhhhhhhhhhhhhoo',
+    '..ohllllllllhllllllllhllllllllhodo',
+    '.ohlllllhllllllllhllllllllhllloddo',
+    '.ooooooooooooooooooooooooooooooddo',
+    '.olllllllllllllllllllllllllllloddo',
+    '.oddddddddddddddddddddddddddddoddo',
+    '.oaaaaaaaaaaaaaaaaaaaaaaaaaaaaoAAo',
+    'orwrwrwwRRRRwwwrwrwwRRRRRwrRrroRRo',
+    'oRRwwwwwRRrrrwRRwwwwwRrrrwrRRRorro',
+    'owrwrwwRRRRwwwrwrwwRRRRRwrRrwroRRo',
+    '.ooooooooooooooooooooooooooooooddo',
+    '.olllllllllllllllllllllllllllloddo',
+    '.oddddddddddddddddddddddddddddodo.',
+    '.ooooooooooooooooooooooooooooooo..',
+    '...kkkkkkkkkkkkkkkkkkkkkkkkkkkkk..',
+    '..................................',
+    '..................................',
+    '..................................',
+    '..................................',
   ],
   // A few crumbs, escalating.
   decorate({ nx, ny, sw, lit }) {
-    for (const [x, y, a] of [[-3, 6, 0.7], [-5, 11, 0.4], [sw + 2, 4, 0.7], [sw + 4, 10, 0.4], [2, -2, 0.4]]) lit(nx + x, ny + y, COLOR.cyan, a);
+    for (const [x, y, a] of [[-3, 10, 0.7], [-5, 15, 0.4], [sw + 2, 8, 0.7], [sw + 4, 14, 0.4], [2, 3, 0.4]]) lit(nx + x, ny + y, COLOR.cyan, a);
   },
 };
 
-/** Orchestrator: a gloved fist conducting with a baton, notes in the air and YAML indenting forever below. */
+/** Orchestrator: a tailcoated conductor seen from behind on a podium, both arms raised, baton up, notes in the air. */
 const ORCHESTRATOR: SpriteDef = {
   rows: [
-    '....cccccc...........................w',
-    '....cccccc.......cc.................ww',
-    '....c....c.......c.................wwG',
-    '....c....c.......c................wwG.',
-    '..ccc..ccc.....cc................wwG..',
-    '..ccc..ccc.....cc...............wwG...',
-    '...............................wwG....',
-    '....oooo.oooo.oooo.oooo.......wwG.....',
-    '...ohhllohhllohhllohhlmo.....wwG......',
-    '...ohlllohlllohlllohllmo....wwG.......',
-    '...ohlllohlllohlllohllmoooowwG........',
-    '..ooooooooooooooooolllmoaaaoG.........',
-    '.ohhhhhhhhhhhhhhloolllmoaaaAo.........',
-    '.olllllllllllllmmoolllmoaaAAo.........',
-    '..ooooooooooooooooommmdoaAAo..........',
-    '...olllllllllllllllllmo.ooo....ccc....',
-    '...olllllllllllllllllmo........c.c....',
-    '....olllllllllllllllmo.........c......',
-    '.....ommmmmmmmmmmmmdo........ccc......',
-    '......oooooooooooooo.........ccc......',
-    '...ooooooooooooooooooo................',
-    '..ohhhhhhhhhhhhhhhhhhlo...............',
-    '..ohllllllllllllalllmmo...............',
-    '..ommmmmmmmmmmmmmmmmddo...............',
-    '..ooooooooooooooooooooo...............',
-    '.....oddddddddddddddo.................',
-    '.....oooooooooooooooo.................',
+    '.......................................w',
+    '..oo............ooooo............oo..ww.',
+    '.oGGoo.........oGwwwGo.........ooGwww...',
+    '.oGGGwo.......oGwwwwwGo.......owGGGo....',
+    '..oGGwwoo.....oGwwwwwGo.....oowwGGo.....',
+    '...oowwwmo....oGwwwwwGo....omwwwoo......',
+    '.....owmmmoo...oGGGGGo...oommmwo........',
+    '..c...ommmmmooooowwwooooommmmmo.........',
+    '..c....ohlmmmmmmmmmmmmmmmmmmdo..........',
+    '.cc.....oohlmmmmmmmmmmmmmmdoo...........',
+    '..........ohlmmmmmmmmmmmmdo.............',
+    '...........ohlmmmmdmmmmmdo..............',
+    '............ohlmmmdmmmmdo...............',
+    '............ohlmmmdmmmmdo.........cc....',
+    '.ccc........ohlmmmdmmmmdo.........c.....',
+    '.c.c.......ohlmmmmdmmmmmdo.......cc.....',
+    'cc.c.......ollllllommmmmmo.......cc.....',
+    'cc.c.......olllllo.ommmmmo..............',
+    '............oldddo.odddmo...............',
+    '.............odddo.odddo................',
+    '.............odddo.odddo................',
+    '.........ooooooooooooooooooo............',
+    '.........ohhhhhhhhhlllllllmo............',
+    '.........ooooooooooooooooooo............',
   ],
-  // Off to the right, a YAML block indents itself further and further down.
-  decorate({ gw, sw, nx, ny, rnd, lit }) {
-    for (let i = 0; i < 5; i++) {
-      const y = ny + 17 + i * 2, x = nx + sw - 2 + i * 2, a = 0.8 - i * 0.14;
-      lit(x, y, COLOR.cyan, a);
-      const n = 2 + Math.floor(rnd() * 3);
-      for (let k = 0; k < n && x + 2 + k < gw; k++) lit(x + 2 + k, y, COLOR.green, a);
-    }
-  },
 };
 
-/** Brute Force: a crowbar at a diagonal, its claw throwing sparks on impact, while the password guesses tick up one letter at a time. */
+/** Brute Force: three big keycaps, A, B and C, with the middle one getting hammered flat. aaaa. aaab. aaac. */
 const CROWBAR: SpriteDef = {
   rows: [
-    '.............................ooooo......',
-    '...........................oohhhloo.....',
-    '.........................oohhhllllmo....',
-    '........................ohhlllmmmllmo...',
-    '.......................ohhllmooooomlmo..',
-    '......................ohllmdo.....omlmo.',
-    '.....................ohllmdo.......omlo.',
-    '....................ohllmdok.......omlo.',
-    '...................ohllmdok.......omllo.',
-    '..................ohllmdok.......omllmo.',
-    '.................ohllmdok.......omlnlmo.',
-    '................ohllmdok.......omo...omo',
-    '...............ohllmdok........oo.....oo',
-    '..............ohllmdok.........a.......a',
-    '.............ohllmdok............f.w.f..',
-    '............ohllmdok.........a....www..f',
-    '...........ohllmdok...........f....w....',
-    '..........ohllmdok...............f...f..',
-    '.........ohllmdok..............a...f...a',
-    '........ohllmdok........................',
-    '.......ohllmdok.........................',
-    '......ohllmdok..........................',
-    '.....ohhllmmdok.........................',
-    '....ohhlmmdok...........................',
-    '....oooooook............................',
+    '...................................',
+    '...................................',
+    '...................................',
+    '...................................',
+    '.ooooooooo...............ooooooooo.',
+    'ohhhhhhhhho.............ohhhhhhhhho',
+    'ohhhhhhhhdo.............ohhhhhhhhdo',
+    'ohmmwwmmmdo..ooooooooo..ohwwwwwwmdo',
+    'ohwwmmwwmdo.ohhhhhhhhho.ohwwmmmmmdo',
+    'ohwwmmwwmdo.ohhhhhhhhdo.ohwwmmmmmdo',
+    'ohwwwwwwmdo.ohwwwwmmmdo.ohwwmmmmmdo',
+    'ohwwmmwwmdo.ohwwmmwwmdo.ohwwmmmmmdo',
+    'ohwwmmwwmdo.ohwwmmwwmdo.ohwwmmmmmdo',
+    'ohwwmmwwmdo.ohwwwwmmmdo.ohwwwwwwmdo',
+    'ohmmmmmmmdo.ohwwmmwwmdo.ohmmmmmmmdo',
+    'ohmmmmmmmdo.ohwwmmwwmdo.ohmmmmmmmdo',
+    'ommmmmmmmmo.ohwwwwmmmdo.ommmmmmmmmo',
+    'odddddddddo.ohmmmmmmmdo.odddddddddo',
+    'odddddddddo.ohmmmmmmmdo.odddddddddo',
+    'odddddddddo.ommmmmmmmmo.odddddddddo',
+    'ooooooooooo.odddddddddo.ooooooooooo',
+    '............ooooooooooo............',
+    'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
+    'ggggggggggggggggggggggggggggggggggg',
   ],
-  decorate({ nx, ny, rnd, lit, glyphs }) {
-    ['AAAA', 'AAAB', 'AAAC'].forEach((guess, i) => glyphs(guess, nx - 10, ny + 1 + i * 6, COLOR.cyan, 0.12 + i * 0.16));
-    for (const [dx, dy] of [[8, 0], [7, 5], [5, 7], [-9, 0], [-7, 5], [-5, 7], [0, 8]]) lit(nx + 35 + dx, ny + 15 + dy, COLOR.amber, 0.6);
-    for (let i = 0; i < 4; i++) lit(nx + 31 + Math.floor(rnd() * 9), ny + 25 + Math.floor(rnd() * 4), COLOR.amber, 0.15 + rnd() * 0.2);
+  // Impact burst off the struck key.
+  decorate({ nx, ny, lit }) {
+    const cx = nx + 17, cy = ny + 5;
+    for (const [dx, dy, a] of [[0, -3, 1], [-3, -2, 0.9], [3, -2, 0.9], [-5, 0, 0.8], [5, 0, 0.8], [-2, -1, 0.7], [2, -1, 0.7], [0, -1, 0.95]]) lit(cx + dx, cy + dy, dy === -1 ? COLOR.white : COLOR.amber, a);
+    for (const [dx, dy] of [[-4, -3], [4, -3], [-1, -2], [1, -2]]) lit(cx + dx, cy + dy, '#ff6a2a', 0.8);
   },
 };
 
@@ -2239,17 +2215,17 @@ const TRIPWIRE: SpriteDef = {
     '.................oooooooooooooooohlmo.',
     '.................oGGGo..........ohlmo.',
     '................ooooooo.........ohlmo.',
-    '..............oolhlllmdoo.......ohlmo.',
-    '.............ollhhllllmddo......ohlmo.',
-    '.............olhhlllllmmdo......ohlmo.',
-    '.............olhllllllmmdo......ohlmo.',
-    '.............olhllllllmmdo......ohlmo.',
-    '.............olhllllllmmdo......ohlmo.',
-    '............ollhlllllllmddo.....ohlmo.',
-    '...........ollhllllllllmmddo....ohlmo.',
-    '.........oolhhlllllllllmmmddoo..ohlmo.',
-    '.........oGGGGGGGGGGGGGGGGgggo..ohlmo.',
-    '.........ooooooooooooooooooooo..ohlmo.',
+    '...............oohlllmoo........ohlmo.',
+    '...............olhhllmdo........ohlmo.',
+    '...............olhlllmdo........ohlmo.',
+    '...............olhlllmdo........ohlmo.',
+    '...............olhlllmdo........ohlmo.',
+    '...............olhlllmdo........ohlmo.',
+    '..............olhllllmmdo.......ohlmo.',
+    '..............olhllllmmdo.......ohlmo.',
+    '.............oolhlllllmdoo......ohlmo.',
+    '.............oGGGGGGGGgggo......ohlmo.',
+    '.............ooooooooooooo......ohlmo.',
     '.................oaaao..........ohlmo.',
     '..ooooo..........oaaao..........ohlmo.',
     '..ohlmo...........ooo...........ohlmo.',
@@ -2263,89 +2239,78 @@ const TRIPWIRE: SpriteDef = {
   ],
   // Ring arcs on both sides of the bell, one flat alarm, and the wire still humming.
   decorate({ nx, ny, rnd, lit, glyphs }) {
-    const arcs = [[10, 5], [9, 6], [8, 7], [8, 8], [8, 9], [9, 10], [10, 11],
-      [27, 5], [28, 6], [29, 7], [29, 8], [29, 9], [28, 10], [27, 11]];
+    const arcs = [[12, 5], [11, 6], [10, 7], [10, 8], [10, 9], [11, 10], [12, 11],
+      [26, 5], [27, 6], [28, 7], [28, 8], [28, 9], [27, 10], [26, 11]];
     arcs.forEach(([x, y]) => lit(nx + x, ny + y, COLOR.amber, 0.9));
-    glyphs('!', nx + 3, ny + 5, COLOR.amber, 0.85);
+    glyphs('!', nx + 5, ny + 5, COLOR.amber, 0.85);
     for (let i = 0; i < 7; i++) {
       lit(nx + 9 + Math.floor(rnd() * 21), ny + (i % 2 ? 19 : 21), COLOR.cyan, 0.2 + rnd() * 0.3);
     }
   },
 };
 
-/** Sandbox: a kids' sandbox with bucket and spade, and a tiny mushroom cloud going off harmlessly in the middle. */
+/** Sandbox: a kids' sandbox with a red pail turned upside down on the sand and a spade stuck in beside it. */
 const SANDBOX: SpriteDef = {
   rows: [
-    '...................GGGGG................',
-    '.................GGwwwGGGG..............',
-    '................GGwwfffaGGG.............',
-    '...............GGwfaaaaaffGG............',
-    '...............GGffaaaaaafGG..ooo.......',
-    '................GfffaaaffGG..oGwgo......',
-    '.........lllll...ggfffffgg..oGwwGgo.....',
-    '........l.....l.....aaa.....oGwwGgo.....',
-    '.......l.......l....aaa.....oGwGGgo.....',
-    '.......l.......l....aaa.....oGGGggo.....',
-    '......ooooooooooo...aaa......ooGoo......',
-    '...oooohhhhlllmdooooaaaooooooooAooooo...',
-    '...ohhoohhhlllmoohhhfafhhhhhhhoaohhho...',
-    '..oooooohhhlllmoooofafafoooooooaoooooo..',
-    '..ohlomohhhlllmomlGGfafGGlmmdmoaomolmo..',
-    '..ohlomohhhlllmomGgGgGgGgGmmlmoaodolmo..',
-    '..ohlommohhllmommmmlmmmmmmlmdmoaommolmo.',
-    '.ohlommmohhllmommmdmmmlmmmmmmloAommolmo.',
-    '.ohlommmooooooommllmmmmmmmmlmlhllmdolmo.',
-    '.ohlommmmmmmmlmmmmmmmdmmdmlllmmmmllolmo.',
-    'oooooooooooooooooooooooooooooooooooooooo',
-    'ohhhhhhhhhhhhhhhhhhhlllllllllllllllllllo',
-    'oooooooooooooooooooooooooooooooooooooooo',
-    'ommGmmmmmmmmommmmmmmmmmmmmommmmmmmmmGmmo',
-    'oddGddddddddodddddddddddddodddddddddGddo',
-    'oooooooooooooooooooooooooooooooooooooooo',
-    '..kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..',
+    '.........................ooooooo....',
+    '.........................oaaaaao....',
+    '.........................oooAooo....',
+    '..........ooooooooo........oao......',
+    '.........owrrrrrrRRo.......oao......',
+    '.........owrrrrrrRRo.......oao......',
+    '.........owrrrrrrRRo.......oao......',
+    '........owrrrrrrrRRRo......oao......',
+    '........owrrrrrrrRRRo......oGo......',
+    '........owrGGGGGGGRRo...oooGGGooo...',
+    '.......owrGrrrrrrrGRRo..oGwwwwGgo...',
+    '.......owrGrrrrrrrGRRo..oGwwwwGgo...',
+    '....oooowrGrrrrrrrGRRooooGwwwwGgo...',
+    '....odowwwGwwwwwwwGwwwodoGwwwGGgo...',
+    '...omoorrrGrrrrrrrGRRRoaoGwwwGGgo...',
+    '..omoAoooooooooooooooooaaoGwGGgodo..',
+    '..omoaAaaaAaaaAaaaAaaaaAaaoGGgoodo..',
+    '.omoaaAaaaAaaaAaaaAaaaAAaaAaAAaaodo.',
+    '.omoaaaAaaaAaaaAaaaAaaaAAaaAaaaAodo.',
+    'omoAaaaAaaaAaaaAaaaAaaaAaaaAaaaAaodo',
+    'oooooooooooooooooooooooooooooooooooo',
+    'oGhhhhhhhhhhhhhhhhhlllllllllllllllGo',
+    'oGmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmGo',
+    'oooooooooooooooooooooooooooooooooooo',
   ],
-  // A few embers drifting off the blast, none of them going anywhere.
-  decorate({ nx, ny, rnd, lit }) {
-    for (let i = 0; i < 8; i++) {
-      const a = (-160 + rnd() * 140) * Math.PI / 180, d = 9 + rnd() * 4;
-      lit(nx + 21 + Math.round(Math.cos(a) * d), ny + 3 + Math.round(Math.sin(a) * d * 0.5), i % 3 ? COLOR.amber : COLOR.orange, 0.3 + rnd() * 0.4);
-    }
-  },
 };
 
-/** Exit Scam: a patterned rug yanked sideways out from under a stack of amber coins, which ripple, topple and fly. */
+/** Exit Scam: a man's legs from the belt down, flat out and leaving, with nothing else left of him. */
 const RUG: SpriteDef = {
   rows: [
-    '..............ooo.......................',
-    '..ooo........oaaAo........ooooo.........',
-    '.oaaAo......oawAAAo......oaawAAo........',
-    'oawAAAo.....oaAaAAo......oaAAAAo........',
-    'oaAaAAo.....oaAAAAo.......ooooo.........',
-    'oaAAAAo......oAAAo......................',
-    '.oAAAo........ooo.......................',
-    '..ooo...................................',
-    '.....oaaaaao............................',
-    '....oaAAAAAAo.......oooooo..............',
-    '.....ooooooo........hhhhhl..............',
-    '........oaaaaao....ohdddllo....ooooooo..',
-    '.......oaAAAAAAo...hdddlhdl...ohhhllmooo',
-    '........oooooooao.ohddddhllo.oohhlllmwGG',
-    '.........oaAAAAAAohlddlllldlohhhooooowGG',
-    '..........oooooooohhdloolddlohhllllmmwGG',
-    '..........oaAAAAAAohlo..omdloooooooomwgg',
-    '...........ooooooodll....mdllohhlllmmwgg',
-    '...oooooooooooohhddlo....omldooooooomwgg',
-    'mllhhhhhhhhhhhhdlddl......mlddohlllmmooo',
-    '...ddldddddlddddhdlo......omdddooooooo..',
-    'mlldlhldddlhldddhdl........mdddddl......',
-    '...ddldddddlddddllo........omlllll......',
-    'mlllllllllllllllll..........mloooo......',
-    '...ooooooooooookkkkkkkkkkkkkkk..........',
-    '..kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk........',
+    '..........oooooooooooooo............',
+    '..........oAAaaaAAooAAAo............',
+    '..........oooooooooooooo............',
+    '..........ohhlllmllllllo............',
+    '..........ohhlllmllllllo............',
+    '..........ohhlllmlllllloo...........',
+    '..........ohhlllmlllllllho..........',
+    '..........ohhlllmlllllllllo.........',
+    '..........ohhlllmlllllllllloo.......',
+    '..oooo....ollmmmdomlllllllllho......',
+    '.owwwoooo.olmmmmdooolllllllllmo.....',
+    '.owGgomllollmmmddo..ollllllllmo.....',
+    '.owggommmmlmmmmdo....olllllllmo.....',
+    '.owgommmmmmmmmmdo.....ollllllmo.....',
+    '.owgoddmmmmmmmmdo......ollllmmo.....',
+    '.owgoooodmmmmmmdo......ohllmmo......',
+    'owwgo...ooddmdddo......ohllmo.......',
+    'owGgo.....ooodoo......ohhlmmo.......',
+    'owggo........o........ohllmo........',
+    '.ooo.................oooooooooooo...',
+    '......................ooGGGGGGGGGo..',
+    '......................oGGGGGGGGGggo.',
+    '.......................owwwwwwwwwo..',
+    '........................ooooooooo...',
   ],
-  // Coin glints thrown off the pile.
+  // Speed lines trailing off behind him and a puff of dust where he just was.
   decorate({ nx, ny, rnd, lit }) {
-    for (let i = 0; i < 5; i++) lit(nx + 2 + Math.floor(rnd() * 28), ny + Math.floor(rnd() * 8), COLOR.amber, 0.25 + rnd() * 0.4);
+    for (const y of [3, 7, 11, 19]) for (let i = 0; i < 12; i += 2) lit(nx - 2 - i - (y % 3), ny + y, COLOR.cyan, 0.75 - i * 0.055);
+    for (let i = 0; i < 12; i++) lit(nx + 2 + Math.floor(rnd() * 12), ny + 20 + Math.floor(rnd() * 4), '#5d676f', 0.2 + rnd() * 0.4);
   },
 };
 
