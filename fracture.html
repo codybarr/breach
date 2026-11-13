@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BREACH.EXE · fracture lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+      canvas { display: block; cursor: crosshair !important; }
+      #lab { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; box-sizing: border-box; padding: 12px 14px; overflow-y: auto;
+             background: rgba(2, 8, 6, 0.9); border-left: 1px solid #1f5a3d; color: #33ff88; font: 13px "Share Tech Mono", monospace; }
+      #lab.closed { transform: translateX(100%); }
+      #toggle { position: fixed; top: 8px; right: 308px; z-index: 2; }
+      #lab.closed + #toggle { right: 8px; }
+      h1 { margin: 0 0 2px; font: 30px "VT323", monospace; letter-spacing: 2px; }
+      h2 { margin: 16px 0 6px; font: 20px "VT323", monospace; color: #33e0ff; }
+      p { margin: 0 0 8px; color: #3fa070; line-height: 1.35; }
+      button, select { background: #000; color: inherit; border: 1px solid #33ff8888; padding: 5px 9px; font: inherit; cursor: pointer; }
+      button:hover { border-color: #33ff88; background: #06231a; }
+      button.on { background: #33ff88; color: #000; }
+      .hits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .hits button { color: #ff3366; border-color: #ff336688; font-size: 15px; }
+      .row { display: grid; grid-template-columns: 78px 1fr 44px; gap: 8px; align-items: center; margin: 3px 0; }
+      .row output { text-align: right; color: #e8fff2; }
+      .row input[type="range"] { width: 100%; accent-color: #33ff88; }
+      label.check { display: block; margin: 4px 0; cursor: pointer; }
+      .bar { display: flex; flex-wrap: wrap; gap: 6px; }
+      textarea { width: 100%; box-sizing: border-box; height: 96px; margin-top: 6px; background: #000; color: #3fa070;
+                 border: 1px solid #1f5a3d; font: 11px "Share Tech Mono", monospace; resize: vertical; }
+    </style>
+  </head>
+  <body>
+    <!-- Dev-only test page for the breach fracture effect (not part of the production build). -->
+    <script type="module" src="/src/dev/fractureLab.ts"></script>
+  </body>
+</html>
