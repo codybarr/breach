@@ -1,4 +1,4 @@
-import type { Ctx } from './game';
+import type { Ctx, Game } from './game';
 
 export type CardKind = 'currency' | 'data' | 'malware' | 'program';
 
@@ -50,6 +50,8 @@ export interface CardDef {
   /** +cycles granted; used by the AI to tell terminals from non-terminals. */
   givesCycles?: number;
   effect?: (ctx: Ctx) => Generator<import('./game').Prompt, void, any>;
+  /** Reason player `p` can't run this from hand right now, when it would only waste a Cycle. */
+  cantRun?: (g: Game, p: number) => string | null;
 }
 
 /** Deterministic block of 0s and 1s; bigger currency = denser grid. */
@@ -406,6 +408,7 @@ const defs: CardDef[] = [
     text: 'Put a card from your\ndiscard into your hand.',
     flavor: 'you do have one, right?',
     art: [], sprite: 'backup',
+    cantRun: (g, p) => (g.players[p].discard.length ? null : 'DISCARD IS EMPTY'),
     *effect(c) {
       const held = new Set(c.me.discard.map((x) => x.def));
       const pile: string | null = yield c.promptSupply({
@@ -520,12 +523,12 @@ const defs: CardDef[] = [
   },
   {
     id: 'bufferoverflow', name: 'Buffer Overflow', cost: 4, kind: 'program', exploit: true,
-    text: '+2 Cards\nExploit: Breach 1 per\ncard in hand above 5.',
+    text: '+2 Cards\nExploit: Breach 1 per\ncard in hand above 4.',
     flavor: 'AAAAAAAAAAAAAAAA',
     art: [], sprite: 'overflow',
     *effect(c) {
       c.draw(2);
-      const n = Math.max(0, c.me.hand.length - 5);
+      const n = Math.max(0, c.me.hand.length - 4);
       yield* c.exploit(function* (t) { t.breach(n); });
     },
   },
@@ -535,7 +538,8 @@ const defs: CardDef[] = [
     flavor: 'if (fired) rm -rf /',
     art: [], sprite: 'bomb',
     *effect(c) {
-      yield* c.exploit(function* (t) { c.atNextTurn(() => t.breach(4)); });
+      // Daemons answer when the bomb goes off, against the hand the target holds then.
+      c.atNextTurn(() => c.exploit(function* (t) { t.breach(4); }));
     },
   },
   {

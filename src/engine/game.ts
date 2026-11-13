@@ -91,7 +91,7 @@ export class Game {
   logLines: string[] = [];
   events: GameEvent[] = [];
   /** Effects that fire at the start of each player's next turn. */
-  scheduled: [Array<() => void>, Array<() => void>] = [[], []];
+  scheduled: [Array<() => Effect | void>, Array<() => Effect | void>] = [[], []];
 
   private runner: Effect | null = null;
   private nextId = 1;
@@ -179,9 +179,14 @@ export class Game {
     const s = this.players[p];
     if (!s.hand.includes(card)) return false;
     const d = this.def(card);
-    if (d.kind === 'program') return this.phase === 'action' && s.cycles > 0;
+    if (d.kind === 'program') return this.phase === 'action' && s.cycles > 0 && !this.cantRun(p, card);
     if (d.kind === 'currency') return true;
     return false;
+  }
+
+  /** Why running this Program now would do nothing, if that is the case. */
+  cantRun(p: number, card: Card): string | null {
+    return this.def(card).cantRun?.(this, p) ?? null;
   }
 
   canBuy(p: number, pile: string): boolean {
@@ -414,8 +419,15 @@ export class Game {
     this.phase = 'action';
     this.emit({ t: 'turn', p });
     this.log(`── turn ${Math.ceil(this.turn / 2)} · ${s.name} ──`);
+    this.startRunner(this.turnStart(p));
+  }
+
+  /** Scheduled effects run like card effects, so they can prompt (a Daemon answering a Logic Bomb). */
+  private *turnStart(p: number): Effect {
     for (const fire of this.scheduled[p].splice(0)) {
-      if (!this.over) fire();
+      if (this.over) return;
+      const effect = fire();
+      if (effect) yield* effect;
     }
   }
 
@@ -462,7 +474,7 @@ export class Ctx {
   heal(n: number) { this.g.heal(this.p, n); }
   breach(n: number, ignoreShield = false) { this.g.breach(this.p, Math.max(0, n - this.softens), ignoreShield); }
   /** Run `fire` at the start of this player's next turn. */
-  atNextTurn(fire: () => void) { this.g.scheduled[this.p].push(fire); }
+  atNextTurn(fire: () => Effect | void) { this.g.scheduled[this.p].push(fire); }
   shield(n: number) {
     this.me.shield += n;
     this.g.emit({ t: 'shield', p: this.p, amount: n });

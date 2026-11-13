@@ -551,6 +551,8 @@ export class GameScene implements SceneLike {
       return { label: d.kind === 'program' ? 'RUN' : 'PLAY', enabled: true, run: () => this.onHandClick(card) };
     }
     if (!this.myTurn()) return { label: 'NOT YOUR TURN', enabled: false };
+    const why = g.phase === 'action' && g.players[this.me].cycles > 0 ? g.cantRun(this.me, card) : null;
+    if (why) return { label: why, enabled: false };
     return { label: g.phase === 'action' ? 'NO CYCLES LEFT' : 'ACTION PHASE ONLY', enabled: false };
   }
 
