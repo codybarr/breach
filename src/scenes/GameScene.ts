@@ -8,6 +8,7 @@ import { session, type NetClient } from '../net/client';
 import type { MatchStart, ServerMsg } from '../net/protocol';
 import { compact, touch } from '../mobile';
 import { CardView } from '../render/cardView';
+import { Fractures } from '../render/fracture';
 import { CardInspector, type InspectAction } from '../render/inspector';
 import { VH, VW, type SceneLike, type Stage } from '../render/stage';
 import { Button, COLOR, CanvasPlane, FONT, Label, TITLE_FONT, drawFrame, hexA, wrap } from '../render/ui';
@@ -136,6 +137,8 @@ export class GameScene implements SceneLike {
   root = new THREE.Group();
   fitHeight = L.fitHeight;
   game: Game;
+  /** Cracks across the screen when this player takes damage. */
+  private fractures = new Fractures();
   private ai: AI | null;
   private difficulty: Difficulty;
   /** Seat this screen plays; the board always shows `me` at the bottom. */
@@ -274,7 +277,7 @@ export class GameScene implements SceneLike {
     this.btnHelp = new Button(L.btn.help.w, L.btn.help.h, { label: L.helpLabel, color: COLOR.cyan, fontSize });
     this.btnHelp.at(L.btn.help.x, L.btn.help.y, 20);
     this.btnHelp.onClick = () => this.reference.show();
-    this.root.add(this.btnHelp.mesh, this.reference.root);
+    this.root.add(this.btnHelp.mesh, this.reference.root, this.fractures.root);
 
     this.buildOverlay();
     this.drainEvents();
@@ -594,6 +597,7 @@ export class GameScene implements SceneLike {
     const g = this.game;
     this.runAI(dt);
     this.drainEvents();
+    this.fractures.update(dt);
 
     if (this.abortArmed > 0) {
       this.abortArmed -= dt;
@@ -683,6 +687,10 @@ export class GameScene implements SceneLike {
         if (e.amount > 0) this.float(`-${e.amount} INT`, panel.x, panel.y, COLOR.red, 34);
         if (e.absorbed > 0) this.float(`${e.absorbed} ABSORBED`, panel.x, panel.y - 30, COLOR.blue, 20);
         this.stage.pulseGlitch(e.p === this.me ? 0.95 : 0.45);
+        if (e.p === this.me && e.amount > 0) {
+          const cam = this.stage.camera;
+          this.fractures.hit((cam.left + cam.right) / 2, (cam.bottom + cam.top) / 2, e.amount, cam);
+        }
         sfx.breach();
         break;
       case 'heal':
@@ -1089,6 +1097,7 @@ export class GameScene implements SceneLike {
 
   dispose() {
     for (const t of this.views.values()) t.view.dispose();
+    this.fractures.clear();
     if (this.net) {
       session.clear();
       this.net.client.send({ t: 'leave' });
