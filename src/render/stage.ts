@@ -94,7 +94,7 @@ export class Stage {
       if (e.pointerType === 'touch') {
         if (!e.isPrimary) return;
         this.press = { id: e.pointerId, target: this.hovered, wasOpen: this.touchInspected, x: e.clientX, y: e.clientY, moved: false };
-        if (this.hovered?.userData.preview) this.touchInspected = this.hovered;
+        if (opensOnTouch(this.hovered)) this.touchInspected = this.hovered;
         return;
       }
       const fn = this.hovered?.userData.onClick;
@@ -163,7 +163,8 @@ export class Stage {
   /**
    * Touch selects before it acts: the first tap on a card opens it, a second tap on
    * that same card activates it, and tapping nothing closes it. Dragging flips between
-   * cards. `oneTap` cards act on every tap; `keepInspect` targets don't close it.
+   * cards. `oneTap` cards act on every tap without opening, so a multi-pick prompt
+   * keeps the whole hand in reach; `keepInspect` targets don't close it.
    */
   private releasePress() {
     const p = this.press!;
@@ -176,8 +177,10 @@ export class Stage {
     }
     if (t.userData.preview) {
       if (p.moved) return;
-      if (t.userData.oneTap) t.userData.onClick?.();
-      else if (p.wasOpen === t) {
+      if (t.userData.oneTap) {
+        t.userData.onClick?.();
+        this.clearInspect(); // one a drag opened would sit over the hand
+      } else if (p.wasOpen === t) {
         t.userData.onClick?.();
         this.clearInspect();
       }
@@ -247,6 +250,11 @@ export class Stage {
     };
     loop();
   }
+}
+
+/** Whether touching this target opens it in the inspector. Dragging onto a card always does. */
+export function opensOnTouch(o: THREE.Object3D | null): boolean {
+  return !!o?.userData.preview && !o.userData.oneTap;
 }
 
 function worldZ(o: THREE.Object3D) {
